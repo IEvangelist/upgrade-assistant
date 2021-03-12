@@ -24,16 +24,22 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private Dictionary<string, double>? _commonMeasurements;
         private Task _trackEventTask;
 
-        private const string InstrumentationKey = "469489a6-628b-4bb9-80db-ec670f70d874";
-        public const string TelemetryOptout = "DOTNET_HTTPREPL_TELEMETRY_OPTOUT";
+        private TelemetryOptions _options;
 
         public Telemetry(
             IOptions<TelemetryOptions> options,
             IFirstTimeUseNoticeSentinel sentinel,
             string? sessionId = null)
         {
+            if (options is null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
+            _options = options.Value;
+
             FirstTimeUseNoticeSentinel = sentinel;
-            Enabled = !EnvironmentHelper.GetEnvironmentVariableAsBool(TelemetryOptout) && PermissionExists(FirstTimeUseNoticeSentinel);
+            Enabled = !EnvironmentHelper.GetEnvironmentVariableAsBool(_options.TelemetryOptout) && PermissionExists(FirstTimeUseNoticeSentinel);
 
             if (!Enabled)
             {
@@ -94,7 +100,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 #pragma warning disable CS0618 // Type or member is obsolete
                 _client = new TelemetryClient();
 #pragma warning restore CS0618 // Type or member is obsolete
-                _client.InstrumentationKey = InstrumentationKey;
+                _client.InstrumentationKey = _options.InstrumentationKey;
                 _client.Context.Session.Id = CurrentSessionId;
                 _client.Context.Device.OperatingSystem = RuntimeEnvironment.OperatingSystem;
 
