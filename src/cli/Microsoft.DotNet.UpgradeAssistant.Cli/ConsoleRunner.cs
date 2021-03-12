@@ -53,7 +53,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             {
                 _logger.LogError("{Message}", e.Message);
                 _telemetry.TrackEvent("upgradeFailure", new PropertyBag { { "StackTrace", e.StackTrace ?? string.Empty } });
-                _errorCode.ErrorCode = ErrorCodes.UnexpectedError;
+                _errorCode.ErrorCode = ErrorCodes.UpgradeError;
             }
             catch (OperationCanceledException)
             {
