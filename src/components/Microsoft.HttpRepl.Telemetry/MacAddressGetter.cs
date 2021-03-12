@@ -126,7 +126,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                         FileName = "ifconfig",
                         Arguments = "-a",
                         UseShellExecute = false
-                    }.ExecuteAndCaptureOutput(out string ifconfigStdOut, out string ifconfigStdErr);
+                    }.ExecuteAndCaptureOutput(out var ifconfigStdOut, out var ifconfigStdErr);
 
                     if (ifconfigResult == 0)
                     {

@@ -13,8 +13,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     [SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "Not doing localization for telemetry yet.")]
     public sealed class StreamForwarder : IDisposable
     {
-        private static readonly char[] IgnoreCharacters = new char[] { '\r' };
         private const char FlushBuilderCharacter = '\n';
+
+        private static readonly char[] IgnoreCharacters = new char[] { '\r' };
 
         private StringBuilder? _builder;
         private StringWriter? _capture;

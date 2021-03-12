@@ -100,7 +100,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.DotNet.UpgradeAss
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.DotNet.UpgradeAssistant.Steps.Configuration.Tests", "tests\steps\Microsoft.DotNet.UpgradeAssistant.Steps.Configuration.Tests\Microsoft.DotNet.UpgradeAssistant.Steps.Configuration.Tests.csproj", "{A58297FF-2276-415F-9A9C-75F9F1656E8C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.HttpRepl.Telemetry", "src\components\Microsoft.HttpRepl.Telemetry\Microsoft.HttpRepl.Telemetry.csproj", "{C6ACCD43-DDD9-4CD0-8F25-8975B3348005}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.DotNet.UpgradeAssistant.Telemetry", "src\components\Microsoft.HttpRepl.Telemetry\Microsoft.DotNet.UpgradeAssistant.Telemetry.csproj", "{C6ACCD43-DDD9-4CD0-8F25-8975B3348005}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

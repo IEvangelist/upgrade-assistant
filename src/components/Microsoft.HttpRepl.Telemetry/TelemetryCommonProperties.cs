@@ -10,14 +10,25 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
     public class TelemetryCommonProperties
     {
+        private const string OSVersion = "OS Version";
+        private const string OSPlatform = "OS Platform";
+        private const string RuntimeId = "Runtime Id";
+        private const string ProductVersion = "Product Version";
+        private const string DockerContainer = "Docker Container";
+        private const string MachineId = "Machine ID";
+        private const string KernelVersion = "Kernel Version";
+
+        private const string MachineIdCacheKey = "MachineId";
+        private const string IsDockerContainerCacheKey = "IsDockerContainer";
+
         private readonly string _productVersion;
 
         public TelemetryCommonProperties(
             string productVersion,
-            Func<string, string> hasher = null,
-            Func<string?> getMACAddress = null,
-            IDockerContainerDetector dockerContainerDetector = null,
-            IUserLevelCacheWriter userLevelCacheWriter = null)
+            Func<string, string>? hasher = null,
+            Func<string?>? getMACAddress = null,
+            IDockerContainerDetector? dockerContainerDetector = null,
+            IUserLevelCacheWriter? userLevelCacheWriter = null)
         {
             _productVersion = productVersion;
             _hasher = hasher ?? Sha256Hasher.Hash;
@@ -30,17 +41,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private readonly IDockerContainerDetector _dockerContainerDetector;
         private readonly Func<string, string> _hasher;
         private readonly Func<string?> _getMACAddress;
-
-        private const string OSVersion = "OS Version";
-        private const string OSPlatform = "OS Platform";
-        private const string RuntimeId = "Runtime Id";
-        private const string ProductVersion = "Product Version";
-        private const string DockerContainer = "Docker Container";
-        private const string MachineId = "Machine ID";
-        private const string KernelVersion = "Kernel Version";
-
-        private const string MachineIdCacheKey = "MachineId";
-        private const string IsDockerContainerCacheKey = "IsDockerContainer";
 
         public Dictionary<string, string> GetTelemetryCommonProperties()
         {

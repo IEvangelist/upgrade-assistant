@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
@@ -19,9 +20,10 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         private string SentinelPath => Path.Combine(_dotnetTryUserProfileFolderPath, _sentinel);
 
-        public FirstTimeUseNoticeSentinel(string productVersion)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "IOptions is always set")]
+        public FirstTimeUseNoticeSentinel(IOptions<TelemetryOptions> options)
             : this(
-                productVersion,
+                options.Value.ProductVersion,
                 Paths.DotnetUserProfileFolderPath,
                 File.Exists,
                 Directory.Exists,
