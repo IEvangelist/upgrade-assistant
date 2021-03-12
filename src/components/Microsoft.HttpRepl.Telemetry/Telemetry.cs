@@ -17,8 +17,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     [SuppressMessage("Naming", "CA1724: Type names should not match namespaces", Justification = "Keeping it consistent with source implementations.")]
     internal sealed class Telemetry : ITelemetry
     {
-        internal static string? CurrentSessionId;
-
         private TelemetryClient? _client;
         private Dictionary<string, string>? _commonProperties;
         private Dictionary<string, double>? _commonMeasurements;
@@ -28,8 +26,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         public Telemetry(
             IOptions<TelemetryOptions> options,
-            IFirstTimeUseNoticeSentinel sentinel,
-            string? sessionId = null)
+            IFirstTimeUseNoticeSentinel sentinel)
         {
             if (options is null)
             {
@@ -46,9 +43,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 _trackEventTask = Task.CompletedTask;
                 return;
             }
-
-            // Store the session ID in a static field so that it can be reused
-            CurrentSessionId = sessionId ?? Guid.NewGuid().ToString();
 
             // Initialize in task to offload to parallel thread
             _trackEventTask = Task.Factory.StartNew(() => InitializeTelemetry(options.Value.ProductVersion), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
@@ -101,7 +95,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 _client = new TelemetryClient();
 #pragma warning restore CS0618 // Type or member is obsolete
                 _client.InstrumentationKey = _options.InstrumentationKey;
-                _client.Context.Session.Id = CurrentSessionId;
+                _client.Context.Session.Id = _options.CurrentSessionId;
                 _client.Context.Device.OperatingSystem = RuntimeEnvironment.OperatingSystem;
 
                 _commonProperties = new TelemetryCommonProperties(productVersion).GetTelemetryCommonProperties();
