@@ -39,7 +39,8 @@ namespace Microsoft.DotNet.UpgradeAssistant
                 throw new ArgumentNullException(nameof(context));
             }
 
-            _telemetry.TrackEvent("initialize", measurements: new MeasurementBag { { "ProjectCount", context.Projects.Count } });
+            _telemetry.TrackEvent("initialize", new PropertyBag().EnrichWithContext(context), new MeasurementBag { { "ProjectCount", context.Projects.Count } });
+            _telemetry.TrackProjectProperties(context);
 
             if (context.EntryPoint is not null)
             {
@@ -116,6 +117,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
                     // It is not necessary to iterate through sub-steps because parents steps are
                     // expected to initialize their children during their own initialization
                     _logger.LogInformation("Initializing upgrade step {StepTitle}", step.Title);
+
                     await step.InitializeAsync(context, token).ConfigureAwait(false);
 
                     // This is actually not dead code. The above sentence InitializeAsync(...) call will potentially change the status.

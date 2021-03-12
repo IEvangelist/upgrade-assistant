@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Cli
@@ -17,6 +18,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
         private readonly IUpgradeContextFactory _contextFactory;
         private readonly CommandProvider _commandProvider;
         private readonly UpgraderManager _upgrader;
+        private readonly ITelemetry _telemetry;
         private readonly IUpgradeStateManager _stateManager;
         private readonly ILogger<ConsoleUpgrade> _logger;
 
@@ -26,6 +28,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             IUpgradeContextFactory contextFactory,
             CommandProvider commandProvider,
             UpgraderManager upgrader,
+            ITelemetry telemetry,
             IUpgradeStateManager stateManager,
             ILogger<ConsoleUpgrade> logger)
         {
@@ -34,6 +37,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _commandProvider = commandProvider ?? throw new ArgumentNullException(nameof(commandProvider));
             _upgrader = upgrader ?? throw new ArgumentNullException(nameof(upgrader));
+            _telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
             _stateManager = stateManager ?? throw new ArgumentNullException(nameof(stateManager));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -58,6 +62,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
 
                     ShowUpgradeSteps(steps, context, step);
                     _io.Output.WriteLine();
+
+                    _telemetry.TrackEvent("step", new PropertyBag { { "stepId", step.Id } }.EnrichWithContext(context));
 
                     var commands = _commandProvider.GetCommands(step, context);
                     var command = await _input.ChooseAsync("Choose a command:", commands, token);

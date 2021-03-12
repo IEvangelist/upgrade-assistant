@@ -24,6 +24,8 @@ namespace Microsoft.DotNet.UpgradeAssistant
 
         IEnumerable<NuGetReference> PackageReferences { get; }
 
+        IEnumerable<string> ProjectTypes { get; }
+
         IEnumerable<NuGetReference> TransitivePackageReferences { get; }
 
         string? LockFilePath { get; }

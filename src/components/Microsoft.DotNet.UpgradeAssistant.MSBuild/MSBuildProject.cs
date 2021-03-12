@@ -228,6 +228,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
             }
         }
 
+        public IEnumerable<string> ProjectTypes => GetPropertyValue("ProjectTypeGuids").Split(';');
+
         IProjectFile IProject.GetFile() => this;
 
         public override bool Equals(object? obj)
