@@ -1,4 +1,4 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -8,7 +8,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
     public sealed class FirstTimeUseNoticeSentinel : IFirstTimeUseNoticeSentinel
     {
-        public const string SkipFirstTimeExperienceEnvironmentVariableName = "DOTNET_HTTPREPL_SKIP_FIRST_TIME_EXPERIENCE";
+        public const string SkipFirstTimeExperienceEnvironmentVariableName = "DOTNET_UPGRADEASSISTANT_SKIP_FIRST_TIME_EXPERIENCE";
 
         private readonly string _sentinel;
         private readonly string _dotnetTryUserProfileFolderPath;
@@ -19,8 +19,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         private string SentinelPath => Path.Combine(_dotnetTryUserProfileFolderPath, _sentinel);
 
-        public FirstTimeUseNoticeSentinel(string productVersion) :
-            this(
+        public FirstTimeUseNoticeSentinel(string productVersion)
+            : this(
                 productVersion,
                 Paths.DotnetUserProfileFolderPath,
                 File.Exists,

@@ -1,4 +1,4 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -16,10 +16,11 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     [SuppressMessage("Naming", "CA1724: Type names should not match namespaces", Justification = "Keeping it consistent with source implementations.")]
     public sealed class Telemetry : ITelemetry
     {
-        internal static string CurrentSessionId;
-        private TelemetryClient _client;
-        private Dictionary<string, string> _commonProperties;
-        private Dictionary<string, double> _commonMeasurements;
+        internal static string? CurrentSessionId;
+
+        private TelemetryClient? _client;
+        private Dictionary<string, string>? _commonProperties;
+        private Dictionary<string, double>? _commonMeasurements;
         private Task _trackEventTask;
 
         private const string InstrumentationKey = "469489a6-628b-4bb9-80db-ec670f70d874";
@@ -27,9 +28,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         public Telemetry(
             string productVersion,
-            IFirstTimeUseNoticeSentinel sentinel = null,
-            string sessionId = null,
-            bool blockThreadInitialization = false)
+            IFirstTimeUseNoticeSentinel? sentinel = null,
+            string? sessionId = null)
         {
             FirstTimeUseNoticeSentinel = sentinel ?? new FirstTimeUseNoticeSentinel(productVersion);
             Enabled = !EnvironmentHelper.GetEnvironmentVariableAsBool(TelemetryOptout) && PermissionExists(FirstTimeUseNoticeSentinel);
@@ -42,24 +42,17 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             // Store the session ID in a static field so that it can be reused
             CurrentSessionId = sessionId ?? Guid.NewGuid().ToString();
 
-            if (blockThreadInitialization)
-            {
-                InitializeTelemetry(productVersion);
-            }
-            else
-            {
-                //initialize in task to offload to parallel thread
-                _trackEventTask = Task.Factory.StartNew(() => InitializeTelemetry(productVersion), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
-            }
+            // Initialize in task to offload to parallel thread
+            _trackEventTask = Task.Factory.StartNew(() => InitializeTelemetry(productVersion), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
         }
 
         public bool Enabled { get; }
 
         public IFirstTimeUseNoticeSentinel FirstTimeUseNoticeSentinel { get; }
 
-        public static bool SkipFirstTimeExperience => EnvironmentHelper.GetEnvironmentVariableAsBool(HttpRepl.Telemetry.FirstTimeUseNoticeSentinel.SkipFirstTimeExperienceEnvironmentVariableName, false);
+        public static bool SkipFirstTimeExperience => EnvironmentHelper.GetEnvironmentVariableAsBool(UpgradeAssistant.Telemetry.FirstTimeUseNoticeSentinel.SkipFirstTimeExperienceEnvironmentVariableName, false);
 
-        private bool PermissionExists(IFirstTimeUseNoticeSentinel sentinel)
+        private bool PermissionExists(IFirstTimeUseNoticeSentinel? sentinel)
         {
             if (sentinel == null)
             {
@@ -69,15 +62,14 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             return sentinel.Exists();
         }
 
-        public void TrackEvent(string eventName, IReadOnlyDictionary<string, string> properties,
-            IReadOnlyDictionary<string, double> measurements)
+        public void TrackEvent(string eventName, IReadOnlyDictionary<string, string> properties, IReadOnlyDictionary<string, double> measurements)
         {
             if (!Enabled)
             {
                 return;
             }
 
-            //continue task in existing parallel thread
+            // Continue task in existing parallel thread
             _trackEventTask = _trackEventTask.ContinueWith(
                 x => TrackEventTask(eventName, properties, measurements),
                 TaskScheduler.Default
@@ -90,6 +82,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             {
                 return;
             }
+
             TrackEventTask(eventName, properties, measurements);
         }
 
@@ -110,7 +103,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             catch (Exception e)
             {
                 _client = null;
-                // we dont want to fail the tool if telemetry fails.
+
+                // We don't want to fail the tool if telemetry fails.
                 Debug.Fail(e.ToString());
             }
         }
@@ -157,15 +151,17 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             return eventMeasurements;
         }
 
-        private Dictionary<string, string> GetEventProperties(IReadOnlyDictionary<string, string> properties)
+        private Dictionary<string, string>? GetEventProperties(IReadOnlyDictionary<string, string> properties)
         {
             if (properties != null)
             {
                 var eventProperties = new Dictionary<string, string>(_commonProperties);
+
                 foreach (KeyValuePair<string, string> property in properties)
                 {
                     eventProperties[property.Key] = property.Value;
                 }
+
                 return eventProperties;
             }
             else

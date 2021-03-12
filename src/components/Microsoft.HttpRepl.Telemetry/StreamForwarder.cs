@@ -1,4 +1,4 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -13,14 +13,14 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     [SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "Not doing localization for telemetry yet.")]
     public sealed class StreamForwarder : IDisposable
     {
-        private static readonly char[] s_ignoreCharacters = new char[] { '\r' };
-        private static readonly char s_flushBuilderCharacter = '\n';
+        private static readonly char[] IgnoreCharacters = new char[] { '\r' };
+        private const char FlushBuilderCharacter = '\n';
 
-        private StringBuilder _builder;
-        private StringWriter _capture;
-        private Action<string> _writeLine;
+        private StringBuilder? _builder;
+        private StringWriter? _capture;
+        private Action<string>? _writeLine;
 
-        public string CapturedOutput
+        public string? CapturedOutput
         {
             get
             {
@@ -71,11 +71,11 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 {
                     currentCharacter = buffer[0];
 
-                    if (currentCharacter == s_flushBuilderCharacter)
+                    if (currentCharacter == FlushBuilderCharacter)
                     {
                         WriteBuilder();
                     }
-                    else if (!s_ignoreCharacters.Contains(currentCharacter))
+                    else if (!IgnoreCharacters.Contains(currentCharacter))
                     {
                         _builder.Append(currentCharacter);
                     }
@@ -85,17 +85,17 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             // Flush anything else when the stream is closed
             // Which should only happen if someone used console.Write
             WriteBuilder();
-        }
 
-        private void WriteBuilder()
-        {
-            if (_builder.Length == 0)
+            void WriteBuilder()
             {
-                return;
-            }
+                if (_builder.Length == 0)
+                {
+                    return;
+                }
 
-            WriteLine(_builder.ToString());
-            _builder.Clear();
+                WriteLine(_builder.ToString());
+                _builder.Clear();
+            }
         }
 
         private void WriteLine(string str)
@@ -111,7 +111,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             }
         }
 
-        private void ThrowIfNull(object obj)
+        private static void ThrowIfNull(object obj)
         {
             if (obj == null)
             {

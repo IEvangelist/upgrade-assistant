@@ -1,4 +1,4 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -15,7 +15,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         public TelemetryCommonProperties(
             string productVersion,
             Func<string, string> hasher = null,
-            Func<string> getMACAddress = null,
+            Func<string?> getMACAddress = null,
             IDockerContainerDetector dockerContainerDetector = null,
             IUserLevelCacheWriter userLevelCacheWriter = null)
         {
@@ -29,7 +29,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private readonly IUserLevelCacheWriter _userLevelCacheWriter;
         private readonly IDockerContainerDetector _dockerContainerDetector;
         private readonly Func<string, string> _hasher;
-        private readonly Func<string> _getMACAddress;
+        private readonly Func<string?> _getMACAddress;
+
         private const string OSVersion = "OS Version";
         private const string OSPlatform = "OS Platform";
         private const string RuntimeId = "Runtime Id";
@@ -45,13 +46,13 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         {
             return new Dictionary<string, string>
             {
-                {OSVersion, RuntimeEnvironment.OperatingSystemVersion},
-                {OSPlatform, RuntimeEnvironment.OperatingSystemPlatform.ToString()},
-                {RuntimeId, RuntimeEnvironment.GetRuntimeIdentifier()},
-                {ProductVersion, _productVersion},
-                {DockerContainer, IsDockerContainer()},
-                {MachineId, GetMachineId()},
-                {KernelVersion, GetKernelVersion()}
+                { OSVersion, RuntimeEnvironment.OperatingSystemVersion },
+                { OSPlatform, RuntimeEnvironment.OperatingSystemPlatform.ToString() },
+                { RuntimeId, RuntimeEnvironment.GetRuntimeIdentifier() },
+                { ProductVersion, _productVersion },
+                { DockerContainer, IsDockerContainer() },
+                { MachineId, GetMachineId() },
+                { KernelVersion, GetKernelVersion() }
             };
         }
 

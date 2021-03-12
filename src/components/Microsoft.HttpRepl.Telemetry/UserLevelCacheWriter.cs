@@ -1,4 +1,4 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -16,8 +16,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private readonly Action<string, string> _writeAllText;
         private readonly Func<string, string> _readAllText;
 
-        public UserLevelCacheWriter(string productVersion) :
-            this(
+        public UserLevelCacheWriter(string productVersion)
+            : this(
                 productVersion,
                 Paths.DotnetUserProfileFolderPath,
                 File.Exists,
