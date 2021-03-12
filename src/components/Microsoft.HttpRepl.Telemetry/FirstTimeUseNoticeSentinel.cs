@@ -9,8 +9,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
     public sealed class FirstTimeUseNoticeSentinel : IFirstTimeUseNoticeSentinel
     {
-        public const string SkipFirstTimeExperienceEnvironmentVariableName = "DOTNET_UPGRADEASSISTANT_SKIP_FIRST_TIME_EXPERIENCE";
-
+        private readonly TelemetryOptions _options;
         private readonly string _sentinel;
         private readonly string _dotnetTryUserProfileFolderPath;
         private readonly Func<string, bool> _fileExists;
@@ -23,7 +22,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "IOptions is always set")]
         public FirstTimeUseNoticeSentinel(IOptions<TelemetryOptions> options)
             : this(
-                options.Value.ProductVersion,
+                options.Value,
                 Paths.DotnetUserProfileFolderPath,
                 File.Exists,
                 Directory.Exists,
@@ -32,21 +31,24 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         {
         }
 
-        public FirstTimeUseNoticeSentinel(
-            string productVersion,
+        private FirstTimeUseNoticeSentinel(
+            TelemetryOptions options,
             string dotnetTryUserProfileFolderPath,
             Func<string, bool> fileExists,
             Func<string, bool> directoryExists,
             Action<string> createDirectory,
             Action<string> createEmptyFile)
         {
-            _sentinel = $"{productVersion}.dotnetHttpReplFirstUseSentinel";
+            _options = options;
+            _sentinel = $"{options.ProductVersion}.{options.SentinelSuffix}";
             _dotnetTryUserProfileFolderPath = dotnetTryUserProfileFolderPath;
             _fileExists = fileExists;
             _directoryExists = directoryExists;
             _createDirectory = createDirectory;
             _createEmptyFile = createEmptyFile;
         }
+
+        public bool SkipFirstTimeExperience => EnvironmentHelper.GetEnvironmentVariableAsBool(_options.SkipFirstTime, false);
 
         public bool Exists()
         {

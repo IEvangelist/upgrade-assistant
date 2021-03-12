@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -120,7 +121,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
         public void SetEntryPoint(IProject? entryPoint) => _entryPointPath = entryPoint?.FilePath;
 
-        public IEnumerable<IProject> Projects
+        private IReadOnlyCollection<IProject>? _projects;
+
+        public IReadOnlyCollection<IProject> Projects
         {
             get
             {
@@ -129,17 +132,26 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
                     throw new InvalidOperationException("Context has not been initialized");
                 }
 
-                foreach (var project in _workspace.CurrentSolution.Projects)
+                if (_projects is null)
                 {
-                    if (project.FilePath is null)
+                    var projects = new List<IProject>();
+
+                    foreach (var project in _workspace.CurrentSolution.Projects)
                     {
-                        _logger.LogWarning("Found a project with no file path {Project}", project);
+                        if (project.FilePath is null)
+                        {
+                            _logger.LogWarning("Found a project with no file path {Project}", project);
+                        }
+                        else
+                        {
+                            projects.Add(GetOrAddProject(project.FilePath));
+                        }
                     }
-                    else
-                    {
-                        yield return GetOrAddProject(project.FilePath);
-                    }
+
+                    _projects = projects;
                 }
+
+                return _projects;
             }
         }
 

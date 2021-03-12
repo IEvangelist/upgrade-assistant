@@ -7,10 +7,16 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     {
         public string ProductVersion { get; set; } = string.Empty;
 
-        public string InstrumentationKey { get; set; } = "469489a6-628b-4bb9-80db-ec670f70d874";
+        public string SentinelSuffix { get; set; } = string.Empty;
 
-        public string TelemetryOptout { get; set; } = "DOTNET_HTTPREPL_TELEMETRY_OPTOUT";
+        public string UserLevelCache { get; set; } = string.Empty;
+
+        public string InstrumentationKey { get; set; } = string.Empty;
+
+        public string TelemetryOptout { get; set; } = string.Empty;
 
         public string CurrentSessionId { get; set; } = string.Empty;
+
+        public string SkipFirstTime { get; set; } = string.Empty;
     }
 }

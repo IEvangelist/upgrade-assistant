@@ -2,9 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 
-namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class TelemetryExtensions
     {
@@ -20,6 +20,10 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 })
                 .Configure(configure);
 
+            services.AddTransient<TelemetryCommonProperties>();
+            services.AddSingleton<IDockerContainerDetector, DockerContainerDetectorForTelemetry>();
+            services.AddSingleton<IUserLevelCacheWriter, UserLevelCacheWriter>();
+            services.AddSingleton<ITelemetry, Telemetry>();
             services.AddSingleton<IFirstTimeUseNoticeSentinel, FirstTimeUseNoticeSentinel>();
         }
     }

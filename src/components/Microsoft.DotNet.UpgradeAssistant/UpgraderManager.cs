@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Microsoft.DotNet.UpgradeAssistant
@@ -14,15 +15,18 @@ namespace Microsoft.DotNet.UpgradeAssistant
     {
         private readonly IPackageRestorer _restorer;
         private readonly IUpgradeStepOrderer _orderer;
+        private readonly ITelemetry _telemetry;
         private readonly ILogger _logger;
 
         public UpgraderManager(
             IPackageRestorer restorer,
             IUpgradeStepOrderer orderer,
+            ITelemetry telemetry,
             ILogger<UpgraderManager> logger)
         {
             _restorer = restorer ?? throw new ArgumentNullException(nameof(restorer));
             _orderer = orderer ?? throw new ArgumentNullException(nameof(orderer));
+            _telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -34,6 +38,8 @@ namespace Microsoft.DotNet.UpgradeAssistant
             {
                 throw new ArgumentNullException(nameof(context));
             }
+
+            _telemetry.TrackEvent("initialize", measurements: new MeasurementBag { { "ProjectCount", context.Projects.Count } });
 
             if (context.EntryPoint is not null)
             {

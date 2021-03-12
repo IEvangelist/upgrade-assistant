@@ -3,22 +3,24 @@
 
 using System;
 using System.IO;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
     public sealed class UserLevelCacheWriter : IUserLevelCacheWriter
     {
-        private readonly string _productVersion;
-        private readonly string _dotnetHttpReplUserProfileFolderPath;
+        private readonly TelemetryOptions _options;
+        private readonly string _dotnetUpgradeAssistantUserProfileFolderPath;
         private readonly Func<string, bool> _fileExists;
         private readonly Func<string, bool> _directoryExists;
         private readonly Action<string> _createDirectory;
         private readonly Action<string, string> _writeAllText;
         private readonly Func<string, string> _readAllText;
 
-        public UserLevelCacheWriter(string productVersion)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Options are always provided")]
+        public UserLevelCacheWriter(IOptions<TelemetryOptions> options)
             : this(
-                productVersion,
+                options.Value,
                 Paths.DotnetUserProfileFolderPath,
                 File.Exists,
                 Directory.Exists,
@@ -28,17 +30,17 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         {
         }
 
-        public UserLevelCacheWriter(
-            string productVersion,
-            string dotnetHttpReplUserProfileFolderPath,
+        private UserLevelCacheWriter(
+            TelemetryOptions options,
+            string dotnetUserProfileFolderPath,
             Func<string, bool> fileExists,
             Func<string, bool> directoryExists,
             Action<string> createDirectory,
             Action<string, string> writeAllText,
             Func<string, string> readAllText)
         {
-            _productVersion = productVersion;
-            _dotnetHttpReplUserProfileFolderPath = dotnetHttpReplUserProfileFolderPath;
+            _options = options;
+            _dotnetUpgradeAssistantUserProfileFolderPath = dotnetUserProfileFolderPath;
             _fileExists = fileExists;
             _directoryExists = directoryExists;
             _createDirectory = createDirectory;
@@ -55,9 +57,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             {
                 if (!_fileExists(cacheFilepath))
                 {
-                    if (!_directoryExists(_dotnetHttpReplUserProfileFolderPath))
+                    if (!_directoryExists(_dotnetUpgradeAssistantUserProfileFolderPath))
                     {
-                        _createDirectory(_dotnetHttpReplUserProfileFolderPath);
+                        _createDirectory(_dotnetUpgradeAssistantUserProfileFolderPath);
                     }
 
                     var runResult = getValueToCache();
@@ -85,7 +87,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         private string GetCacheFilePath(string cacheKey)
         {
-            return Path.Combine(_dotnetHttpReplUserProfileFolderPath, $"{_productVersion}_{cacheKey}.dotnetHttpReplUserLevelCache");
+            return Path.Combine(_dotnetUpgradeAssistantUserProfileFolderPath, $"{_options.ProductVersion}_{cacheKey}.{_options.UserLevelCache}");
         }
     }
 }

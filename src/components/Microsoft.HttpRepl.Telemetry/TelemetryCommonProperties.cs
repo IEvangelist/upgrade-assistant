@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Options;
 using RuntimeEnvironment = Microsoft.DotNet.PlatformAbstractions.RuntimeEnvironment;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
@@ -21,24 +22,22 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private const string MachineIdCacheKey = "MachineId";
         private const string IsDockerContainerCacheKey = "IsDockerContainer";
 
-        private readonly string _productVersion;
-
         public TelemetryCommonProperties(
-            string productVersion,
-            Func<string, string>? hasher = null,
-            Func<string?>? getMACAddress = null,
-            IDockerContainerDetector? dockerContainerDetector = null,
-            IUserLevelCacheWriter? userLevelCacheWriter = null)
+            IOptions<TelemetryOptions> options,
+            IDockerContainerDetector dockerContainerDetector,
+            IUserLevelCacheWriter userLevelCacheWriter)
         {
-            _productVersion = productVersion;
-            _hasher = hasher ?? Sha256Hasher.Hash;
-            _getMACAddress = getMACAddress ?? MacAddressGetter.GetMacAddress;
-            _dockerContainerDetector = dockerContainerDetector ?? new DockerContainerDetectorForTelemetry();
-            _userLevelCacheWriter = userLevelCacheWriter ?? new UserLevelCacheWriter(productVersion);
+            _options = options;
+            _hasher = Sha256Hasher.Hash;
+            _getMACAddress = MacAddressGetter.GetMacAddress;
+            _dockerContainerDetector = dockerContainerDetector;
+            _userLevelCacheWriter = userLevelCacheWriter;
         }
 
         private readonly IUserLevelCacheWriter _userLevelCacheWriter;
         private readonly IDockerContainerDetector _dockerContainerDetector;
+        private readonly IOptions<TelemetryOptions> _options;
+
         private readonly Func<string, string> _hasher;
         private readonly Func<string?> _getMACAddress;
 
@@ -49,7 +48,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 { OSVersion, RuntimeEnvironment.OperatingSystemVersion },
                 { OSPlatform, RuntimeEnvironment.OperatingSystemPlatform.ToString() },
                 { RuntimeId, RuntimeEnvironment.GetRuntimeIdentifier() },
-                { ProductVersion, _productVersion },
+                { ProductVersion, _options.Value.ProductVersion },
                 { DockerContainer, IsDockerContainer() },
                 { MachineId, GetMachineId() },
                 { KernelVersion, GetKernelVersion() }

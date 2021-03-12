@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -20,19 +21,23 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
         private readonly ILogger _logger;
         private readonly IHostApplicationLifetime _lifetime;
         private readonly ErrorCodeAccessor _errorCode;
+        private readonly ITelemetry _telemetry;
 
         public ConsoleRunner(
             IServiceProvider services,
             IHostApplicationLifetime lifetime,
             ErrorCodeAccessor errorCode,
+            ITelemetry telemetry,
             ILogger<ConsoleRunner> logger)
         {
             _lifetime = lifetime ?? throw new ArgumentNullException(nameof(lifetime));
             _services = services ?? throw new ArgumentNullException(nameof(services));
             _errorCode = errorCode ?? throw new ArgumentNullException(nameof(errorCode));
+            _telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "We want all errors to be caught before exiting this method")]
         public async Task StartAsync(CancellationToken token)
         {
             try
@@ -47,14 +52,23 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             catch (UpgradeException e)
             {
                 _logger.LogError("{Message}", e.Message);
+                _telemetry.TrackEvent("upgradeFailure", new PropertyBag { { "StackTrace", e.StackTrace ?? string.Empty } });
                 _errorCode.ErrorCode = ErrorCodes.UnexpectedError;
             }
             catch (OperationCanceledException)
             {
                 _logger.LogTrace("A cancellation occurred");
             }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Unexpected error");
+                _telemetry.TrackEvent("unexpectedFailure", new PropertyBag { { "StackTrace", e.StackTrace ?? string.Empty } });
+                _errorCode.ErrorCode = ErrorCodes.UnexpectedError;
+            }
             finally
             {
+                _telemetry.TrackEvent("exited");
+                await _telemetry.DisposeAsync();
                 _lifetime.StopApplication();
             }
         }

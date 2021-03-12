@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.DotNet.UpgradeAssistant.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -131,6 +132,14 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                     services.AddSingleton<ErrorCodeAccessor>();
 
                     services.AddStepManagement();
+
+                    services.AddTransient<IUpgradeStartup, ConsoleTelemetryOptIn>();
+                    services.AddTelemetry(options =>
+                    {
+                        context.Configuration.GetSection("Telemetry").Bind(options);
+
+                        options.ProductVersion = Constants.Version;
+                    });
                 });
 
             var host = configure(hostBuilder).UseConsoleLifetime(options =>

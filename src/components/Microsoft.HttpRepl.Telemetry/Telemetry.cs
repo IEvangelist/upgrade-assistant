@@ -26,6 +26,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         public Telemetry(
             IOptions<TelemetryOptions> options,
+            TelemetryCommonProperties commonProperties,
             IFirstTimeUseNoticeSentinel sentinel)
         {
             if (options is null)
@@ -35,8 +36,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
             _options = options.Value;
 
-            FirstTimeUseNoticeSentinel = sentinel;
-            Enabled = !EnvironmentHelper.GetEnvironmentVariableAsBool(_options.TelemetryOptout) && PermissionExists(FirstTimeUseNoticeSentinel);
+            Enabled = !EnvironmentHelper.GetEnvironmentVariableAsBool(_options.TelemetryOptout) && PermissionExists(sentinel);
 
             if (!Enabled)
             {
@@ -45,14 +45,10 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             }
 
             // Initialize in task to offload to parallel thread
-            _trackEventTask = Task.Factory.StartNew(() => InitializeTelemetry(options.Value.ProductVersion), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
+            _trackEventTask = Task.Factory.StartNew(() => InitializeTelemetry(commonProperties), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
         }
 
         public bool Enabled { get; }
-
-        public IFirstTimeUseNoticeSentinel FirstTimeUseNoticeSentinel { get; }
-
-        public static bool SkipFirstTimeExperience => EnvironmentHelper.GetEnvironmentVariableAsBool(UpgradeAssistant.Telemetry.FirstTimeUseNoticeSentinel.SkipFirstTimeExperienceEnvironmentVariableName, false);
 
         private static bool PermissionExists(IFirstTimeUseNoticeSentinel? sentinel)
         {
@@ -64,7 +60,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             return sentinel.Exists();
         }
 
-        public void TrackEvent(string eventName, IReadOnlyDictionary<string, string> properties, IReadOnlyDictionary<string, double> measurements)
+        public void TrackEvent(string eventName, IReadOnlyDictionary<string, string>? properties, IReadOnlyDictionary<string, double>? measurements)
         {
             if (!Enabled)
             {
@@ -77,17 +73,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 TaskScheduler.Default);
         }
 
-        private void ThreadBlockingTrackEvent(string eventName, IReadOnlyDictionary<string, string> properties, IReadOnlyDictionary<string, double> measurements)
-        {
-            if (!Enabled)
-            {
-                return;
-            }
-
-            TrackEventTask(eventName, properties, measurements);
-        }
-
-        private void InitializeTelemetry(string productVersion)
+        private void InitializeTelemetry(TelemetryCommonProperties commonProperties)
         {
             try
             {
@@ -98,7 +84,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 _client.Context.Session.Id = _options.CurrentSessionId;
                 _client.Context.Device.OperatingSystem = RuntimeEnvironment.OperatingSystem;
 
-                _commonProperties = new TelemetryCommonProperties(productVersion).GetTelemetryCommonProperties();
+                _commonProperties = commonProperties.GetTelemetryCommonProperties();
                 _commonMeasurements = new Dictionary<string, double>();
             }
             catch (Exception e)
@@ -112,8 +98,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         private void TrackEventTask(
             string eventName,
-            IReadOnlyDictionary<string, string> properties,
-            IReadOnlyDictionary<string, double> measurements)
+            IReadOnlyDictionary<string, string>? properties,
+            IReadOnlyDictionary<string, double>? measurements)
         {
             if (_client == null)
             {
@@ -139,7 +125,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             return "dotnet/upgradeassistant/" + eventName;
         }
 
-        private Dictionary<string, double> GetEventMeasures(IReadOnlyDictionary<string, double> measurements)
+        private Dictionary<string, double> GetEventMeasures(IReadOnlyDictionary<string, double>? measurements)
         {
             var eventMeasurements = new Dictionary<string, double>(_commonMeasurements);
 
@@ -154,7 +140,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             return eventMeasurements;
         }
 
-        private Dictionary<string, string>? GetEventProperties(IReadOnlyDictionary<string, string> properties)
+        private Dictionary<string, string>? GetEventProperties(IReadOnlyDictionary<string, string>? properties)
         {
             if (properties != null)
             {
@@ -171,6 +157,12 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             {
                 return _commonProperties;
             }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            _client?.Flush();
+            await _trackEventTask.ConfigureAwait(false);
         }
     }
 }

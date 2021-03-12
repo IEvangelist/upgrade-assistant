@@ -6,6 +6,7 @@
     <PackageVersion Include="AutoFixture" Version="4.15.0" />
     <PackageVersion Include="coverlet.collector" Version="3.0.2" />
     <PackageVersion Include="Microsoft.ApplicationInsights.WorkerService" Version="2.15.0" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" />
     <PackageVersion Include="Microsoft.Build" Version="16.8.0" />
     <PackageVersion Include="Microsoft.Build.Framework" Version="16.8.0" />
     <PackageVersion Include="Microsoft.Build.Locator" Version="1.4.1" />
