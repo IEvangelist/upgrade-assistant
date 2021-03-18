@@ -118,7 +118,10 @@ namespace Microsoft.DotNet.UpgradeAssistant
                     // expected to initialize their children during their own initialization
                     _logger.LogInformation("Initializing upgrade step {StepTitle}", step.Title);
 
-                    await step.InitializeAsync(context, token).ConfigureAwait(false);
+                    using (_telemetry.TimeEvent("initializeStep", new PropertyBag { { "stepId", step.Id } }.EnrichWithContext(context)))
+                    {
+                        await step.InitializeAsync(context, token).ConfigureAwait(false);
+                    }
 
                     // This is actually not dead code. The above sentence InitializeAsync(...) call will potentially change the status.
 #pragma warning disable CA1508 // Avoid dead conditional code

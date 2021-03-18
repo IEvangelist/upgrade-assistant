@@ -72,7 +72,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                     //        that can be shown here. Also, commands currently only return bools but, in the future,
                     //        if they return more complex objects, custom handlers could be used to respond to the different
                     //        commands' return values.
-                    if (!await command.ExecuteAsync(context, token))
+                    if (!await ExecuteAndTimeCommand(context, step, command, token))
                     {
                         Console.ForegroundColor = ConsoleColor.Yellow;
                         _io.Output.WriteLine($"Command ({command.CommandText}) did not succeed");
@@ -97,6 +97,14 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             {
                 // Do not pass the same token as it may have been canceled and we still need to persist this.
                 await _stateManager.SaveStateAsync(context, default);
+            }
+        }
+
+        private async ValueTask<bool> ExecuteAndTimeCommand(IUpgradeContext context, UpgradeStep step, UpgradeCommand command, CancellationToken token)
+        {
+            using (_telemetry.TimeEvent("applyStep", new PropertyBag { { "stepId", step.Id } }.EnrichWithContext(context)))
+            {
+                return await command.ExecuteAsync(context, token);
             }
         }
 
