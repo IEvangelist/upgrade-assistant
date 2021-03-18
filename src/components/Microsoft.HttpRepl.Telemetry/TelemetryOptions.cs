@@ -7,16 +7,18 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     {
         public string ProductVersion { get; set; } = string.Empty;
 
-        public string SentinelSuffix { get; set; } = string.Empty;
+        public string ToolName { get; set; } = string.Empty;
 
-        public string UserLevelCache { get; set; } = string.Empty;
+        public string SentinelSuffix => $"dotnet{ToolName}FirstUseSentinel";
+
+        public string UserLevelCache => $"dotnet{ToolName}UserLevelCache";
 
         public string InstrumentationKey { get; set; } = string.Empty;
 
-        public string TelemetryOptout { get; set; } = string.Empty;
+        public string TelemetryOptout => $"DOTNET_{ToolName.ToUpperInvariant()}_TELEMTRY_OPTOUT";
 
         public string CurrentSessionId { get; set; } = string.Empty;
 
-        public string SkipFirstTime { get; set; } = string.Empty;
+        public string SkipFirstTime => $"DOTNET_{ToolName.ToUpperInvariant()}_SKIP_FIRST_TIME_EXPERIENCE";
     }
 }

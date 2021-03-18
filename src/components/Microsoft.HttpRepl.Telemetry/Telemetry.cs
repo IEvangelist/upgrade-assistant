@@ -120,10 +120,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             }
         }
 
-        private static string PrependProducerNamespace(string eventName)
-        {
-            return "dotnet/upgradeassistant/" + eventName;
-        }
+        private string PrependProducerNamespace(string eventName) => $"dotnet/{_options.ToolName}/{eventName}";
 
         private Dictionary<string, double> GetEventMeasures(IReadOnlyDictionary<string, double>? measurements)
         {

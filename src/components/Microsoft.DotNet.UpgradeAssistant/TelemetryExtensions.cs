@@ -22,7 +22,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
                 throw new ArgumentNullException(nameof(context));
             }
 
-            bag.Add("upgradeId", HashString(context.InputPath));
+            bag.Add("solutionId", HashString(context.InputPath));
 
             if (context.CurrentProject is not null)
             {
