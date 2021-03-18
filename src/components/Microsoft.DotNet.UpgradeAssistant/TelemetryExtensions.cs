@@ -2,45 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 
 namespace Microsoft.DotNet.UpgradeAssistant
 {
     public static class TelemetryExtensions
     {
-        public static PropertyBag EnrichWithContext(this PropertyBag bag, IUpgradeContext context)
-        {
-            if (bag is null)
-            {
-                throw new ArgumentNullException(nameof(bag));
-            }
-
-            if (context is null)
-            {
-                throw new ArgumentNullException(nameof(context));
-            }
-
-            bag.Add("solutionId", HashString(context.InputPath));
-
-            if (context.CurrentProject is not null)
-            {
-                bag.Add("projectId", HashString(context.CurrentProject.FilePath));
-            }
-
-            return bag;
-
-            string HashString(string input)
-            {
-                using var hasher = SHA512.Create();
-
-                var hash = hasher.ComputeHash(Encoding.UTF8.GetBytes(input));
-
-                return Convert.ToBase64String(hash);
-            }
-        }
-
         public static void TrackProjectProperties(this ITelemetry telemetry, IUpgradeContext context)
         {
             if (telemetry is null)
@@ -70,13 +37,13 @@ namespace Microsoft.DotNet.UpgradeAssistant
                         { "types", string.Join(";", project.ProjectTypes) },
                     };
 
-                    telemetry.TrackEvent("projectInfo", properties.EnrichWithContext(context));
+                    telemetry.TrackEvent("project", properties);
                 }
 #pragma warning disable CA1031 // Do not catch general exception types
                 catch (Exception e)
 #pragma warning restore CA1031 // Do not catch general exception types
                 {
-                    telemetry.TrackEvent("projectInfoError", new PropertyBag { { "message", e.Message } });
+                    telemetry.TrackEvent("project/error", new PropertyBag { { "message", e.Message } });
                 }
             }
         }

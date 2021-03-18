@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
@@ -160,6 +162,42 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         {
             _client?.Flush();
             await _trackEventTask.ConfigureAwait(false);
+        }
+
+        public IDisposable AddProperty(string name, string value, bool hash)
+        {
+            if (_commonProperties is null)
+            {
+                _commonProperties = new Dictionary<string, string>();
+            }
+
+            _commonProperties[name] = hash ? HashString(value) : value;
+
+            return new RemoveEntry(() => _commonProperties?.Remove(name));
+
+            static string HashString(string input)
+            {
+                if (input.Length == 0)
+                {
+                    return string.Empty;
+                }
+
+                using var hasher = SHA512.Create();
+                var hash = hasher.ComputeHash(Encoding.UTF8.GetBytes(input));
+                return Convert.ToBase64String(hash);
+            }
+        }
+
+        private sealed class RemoveEntry : IDisposable
+        {
+            private readonly Action _action;
+
+            public RemoveEntry(Action action)
+            {
+                _action = action;
+            }
+
+            public void Dispose() => _action();
         }
     }
 }

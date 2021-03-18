@@ -10,6 +10,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     {
         bool Enabled { get; }
 
+        IDisposable AddProperty(string name, string value, bool hash = true);
+
         void TrackEvent(string eventName, IReadOnlyDictionary<string, string>? properties = null, IReadOnlyDictionary<string, double>? measurements = null);
     }
 }

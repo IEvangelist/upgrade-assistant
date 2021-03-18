@@ -46,6 +46,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
         {
             using var context = await _contextFactory.CreateContext(token);
 
+            _telemetry.AddProperty("solutionId", context.InputPath);
+
             await _stateManager.LoadStateAsync(context, token);
 
             try
@@ -58,37 +60,18 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
 
                 while (step is not null)
                 {
-                    token.ThrowIfCancellationRequested();
-
                     ShowUpgradeSteps(steps, context, step);
-                    _io.Output.WriteLine();
 
-                    _telemetry.TrackEvent("step", new PropertyBag { { "stepId", step.Id } }.EnrichWithContext(context));
-
-                    var commands = _commandProvider.GetCommands(step, context);
-                    var command = await _input.ChooseAsync("Choose a command:", commands, token);
-
-                    // TODO : It might be nice to allow commands to show more details by having a 'status' property
-                    //        that can be shown here. Also, commands currently only return bools but, in the future,
-                    //        if they return more complex objects, custom handlers could be used to respond to the different
-                    //        commands' return values.
-                    if (!await ExecuteAndTimeCommand(context, step, command, token))
+                    using (_telemetry.AddProperty("entrypoint", context.EntryPoint?.FilePath ?? string.Empty))
+                    using (_telemetry.AddProperty("projectId", context.CurrentProject?.FilePath ?? string.Empty))
                     {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        _io.Output.WriteLine($"Command ({command.CommandText}) did not succeed");
-                        Console.ResetColor();
-                    }
-                    else if (await _input.WaitToProceedAsync(token))
-                    {
-                        ConsoleUtils.Clear();
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Upgrade process was canceled. Quitting....");
-                        return;
-                    }
+                        using (_telemetry.AddProperty("stepId", step.Id))
+                        {
+                            await RunStepAsync(context, step, token);
+                        }
 
-                    step = await _upgrader.GetNextStepAsync(context, token);
+                        step = await _upgrader.GetNextStepAsync(context, token);
+                    }
                 }
 
                 _logger.LogInformation("Upgrade has completed. Please review any changes.");
@@ -100,9 +83,39 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             }
         }
 
-        private async ValueTask<bool> ExecuteAndTimeCommand(IUpgradeContext context, UpgradeStep step, UpgradeCommand command, CancellationToken token)
+        private async Task RunStepAsync(IUpgradeContext context, UpgradeStep step, CancellationToken token)
         {
-            using (_telemetry.TimeEvent("applyStep", new PropertyBag { { "stepId", step.Id } }.EnrichWithContext(context)))
+            token.ThrowIfCancellationRequested();
+
+            _io.Output.WriteLine();
+
+            var commands = _commandProvider.GetCommands(step, context);
+            var command = await _input.ChooseAsync("Choose a command:", commands, token);
+
+            // TODO : It might be nice to allow commands to show more details by having a 'status' property
+            //        that can be shown here. Also, commands currently only return bools but, in the future,
+            //        if they return more complex objects, custom handlers could be used to respond to the different
+            //        commands' return values.
+            if (!await ExecuteAndTimeCommand(context, command, token))
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                _io.Output.WriteLine($"Command ({command.CommandText}) did not succeed");
+                Console.ResetColor();
+            }
+            else if (await _input.WaitToProceedAsync(token))
+            {
+                ConsoleUtils.Clear();
+            }
+            else
+            {
+                _logger.LogWarning("Upgrade process was canceled. Quitting....");
+                return;
+            }
+        }
+
+        private async ValueTask<bool> ExecuteAndTimeCommand(IUpgradeContext context, UpgradeCommand command, CancellationToken token)
+        {
+            using (_telemetry.TimeEvent("step/apply"))
             {
                 return await command.ExecuteAsync(context, token);
             }
