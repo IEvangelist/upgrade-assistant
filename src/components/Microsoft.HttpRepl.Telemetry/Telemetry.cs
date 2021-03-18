@@ -171,9 +171,18 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 _commonProperties = new Dictionary<string, string>();
             }
 
-            _commonProperties[name] = hash ? HashString(value) : value;
+            // Continue task in existing parallel thread
+            _trackEventTask = _trackEventTask.ContinueWith(
+                _ => _commonProperties[name] = hash ? HashString(value) : value,
+                TaskScheduler.Default);
 
-            return new RemoveEntry(() => _commonProperties?.Remove(name));
+            return new RemoveEntry(() =>
+            {
+                // Continue task in existing parallel thread
+                _trackEventTask = _trackEventTask.ContinueWith(
+                    _ => _commonProperties?.Remove(name),
+                    TaskScheduler.Default);
+            });
 
             static string HashString(string input)
             {
