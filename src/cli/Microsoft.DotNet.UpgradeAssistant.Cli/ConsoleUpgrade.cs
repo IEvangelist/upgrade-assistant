@@ -65,7 +65,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                     using (_telemetry.AddProperty("Entrypoint", context.EntryPoint?.FilePath ?? string.Empty))
                     using (_telemetry.AddProperty("Project", context.CurrentProject?.FilePath ?? string.Empty))
                     {
-                        using (_telemetry.AddProperty("stepId", step.Id))
+                        using (_telemetry.AddProperty("Step Id", step.Id))
                         {
                             await RunStepAsync(context, step, token);
                         }
