@@ -5,6 +5,10 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
     public interface IFirstTimeUseNoticeSentinel
     {
+        string Title { get; }
+
+        string DisclosureText { get; }
+
         bool Exists();
 
         void CreateIfNotExists();

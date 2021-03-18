@@ -7,7 +7,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     {
         public string ProductVersion { get; set; } = string.Empty;
 
-        public string ToolName { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+
+        private string ToolName => DisplayName.Replace(" ", string.Empty);
 
         public string SentinelSuffix => $"dotnet{ToolName}FirstUseSentinel";
 
@@ -16,6 +18,10 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         public string InstrumentationKey { get; set; } = string.Empty;
 
         public string TelemetryOptout => $"DOTNET_{ToolName.ToUpperInvariant()}_TELEMTRY_OPTOUT";
+
+        public string ProducerNamespace => $"dotnet/{ToolName}";
+
+        public string DetailsLink { get; set; } = string.Empty;
 
         public string CurrentSessionId { get; set; } = string.Empty;
 

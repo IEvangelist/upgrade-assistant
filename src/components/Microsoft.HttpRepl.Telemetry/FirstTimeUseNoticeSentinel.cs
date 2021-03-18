@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Globalization;
 using System.IO;
 using Microsoft.Extensions.Options;
 
@@ -49,6 +50,10 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         }
 
         public bool SkipFirstTimeExperience => EnvironmentHelper.GetEnvironmentVariableAsBool(_options.SkipFirstTime, false);
+
+        public string Title => LocalizedStrings.Title;
+
+        public string DisclosureText => string.Format(CultureInfo.InvariantCulture, LocalizedStrings.CollectionDisclosure, _options.TelemetryOptout, _options.DisplayName, _options.DetailsLink);
 
         public bool Exists()
         {

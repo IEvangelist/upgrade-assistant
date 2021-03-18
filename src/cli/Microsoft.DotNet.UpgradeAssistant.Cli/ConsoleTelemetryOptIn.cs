@@ -2,45 +2,36 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.DotNet.UpgradeAssistant.Cli;
 using Microsoft.DotNet.UpgradeAssistant.Telemetry;
-using Microsoft.Extensions.Logging;
 
 namespace Microsoft.DotNet.UpgradeAssistant
 {
     public class ConsoleTelemetryOptIn : IUpgradeStartup
     {
         private readonly IFirstTimeUseNoticeSentinel _sentinel;
-        private readonly IUserInput _input;
+        private readonly InputOutputStreams _io;
 
-        public ConsoleTelemetryOptIn(IFirstTimeUseNoticeSentinel sentinel, IUserInput input)
+        public ConsoleTelemetryOptIn(IFirstTimeUseNoticeSentinel sentinel, InputOutputStreams io)
         {
             _sentinel = sentinel ?? throw new ArgumentNullException(nameof(sentinel));
-            _input = input ?? throw new ArgumentNullException(nameof(input));
+            _io = io ?? throw new ArgumentNullException(nameof(io));
         }
 
-        public async Task<bool> StartupAsync(CancellationToken token)
+        public Task<bool> StartupAsync(CancellationToken token)
         {
             if (!_sentinel.Exists())
             {
-                var result = await _input.ChooseAsync("Allow gathering telemetry", UpgradeCommand.CreateFromEnum<Options>(), token);
-
-                if (result.Value == Options.Yes)
-                {
-                    _sentinel.CreateIfNotExists();
-                }
+                _io.Output.WriteLine();
+                _io.Output.WriteLine(_sentinel.Title);
+                _io.Output.WriteLine(new string('-', 10));
+                _io.Output.WriteLine(_sentinel.DisclosureText);
+                _io.Output.WriteLine();
             }
 
-            return true;
-        }
-
-        private enum Options
-        {
-            Yes,
-            No
+            return Task.FromResult(true);
         }
     }
 }
