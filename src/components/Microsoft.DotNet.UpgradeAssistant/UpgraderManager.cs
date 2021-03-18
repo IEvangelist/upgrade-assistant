@@ -39,7 +39,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
                 throw new ArgumentNullException(nameof(context));
             }
 
-            _telemetry.TrackEvent("initialize", measurements: new MeasurementBag { { "ProjectCount", context.Projects.Count } });
+            _telemetry.TrackEvent("initialize", measurements: new MeasurementBag { { "Project Count", context.Projects.Count } });
             _telemetry.TrackProjectProperties(context);
 
             if (context.EntryPoint is not null)
@@ -118,7 +118,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
                     // expected to initialize their children during their own initialization
                     _logger.LogInformation("Initializing upgrade step {StepTitle}", step.Title);
 
-                    using (_telemetry.AddProperty("stepId", step.Id))
+                    using (_telemetry.AddProperty("Step Id", step.Id))
                     using (_telemetry.TimeEvent("step/initialize"))
                     {
                         await step.InitializeAsync(context, token).ConfigureAwait(false);

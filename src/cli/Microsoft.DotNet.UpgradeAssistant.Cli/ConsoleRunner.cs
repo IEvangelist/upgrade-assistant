@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.DotNet.UpgradeAssistant.Telemetry;
@@ -52,22 +53,26 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             catch (UpgradeException e)
             {
                 _logger.LogError("{Message}", e.Message);
-                _telemetry.TrackEvent("upgradeFailure", new PropertyBag { { "StackTrace", e.StackTrace ?? string.Empty } });
                 _errorCode.ErrorCode = ErrorCodes.UpgradeError;
+
+                _telemetry.TrackEvent("failure/upgrade", new PropertyBag { { "StackTrace", e.StackTrace ?? string.Empty } });
             }
             catch (OperationCanceledException)
             {
                 _logger.LogTrace("A cancellation occurred");
+                _errorCode.ErrorCode = ErrorCodes.Canceled;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "Unexpected error");
-                _telemetry.TrackEvent("unexpectedFailure", new PropertyBag { { "StackTrace", e.StackTrace ?? string.Empty } });
                 _errorCode.ErrorCode = ErrorCodes.UnexpectedError;
+
+                _telemetry.TrackEvent("failure/unknown", new PropertyBag { { "StackTrace", e.StackTrace ?? string.Empty } });
             }
             finally
             {
-                _telemetry.TrackEvent("exited");
+                _telemetry.TrackEvent("exited", new PropertyBag { { "Exit Code", _errorCode.ErrorCode.ToString(CultureInfo.InvariantCulture) } });
+
                 await _telemetry.DisposeAsync();
                 _lifetime.StopApplication();
             }

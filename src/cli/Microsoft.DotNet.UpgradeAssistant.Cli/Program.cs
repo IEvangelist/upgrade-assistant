@@ -106,6 +106,14 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                 .UseContentRoot(AppContext.BaseDirectory)
                 .ConfigureServices((context, services) =>
                 {
+                    // Register this first so the first startup step is to check for telemetry opt-in
+                    services.AddTransient<IUpgradeStartup, ConsoleTelemetryOptIn>();
+                    services.AddTelemetry(options =>
+                    {
+                        context.Configuration.GetSection("Telemetry").Bind(options);
+                        options.ProductVersion = Constants.Version;
+                    });
+
                     services.AddHostedService<ConsoleRunner>();
 
                     services.AddSingleton<IUpgradeStateManager, FileUpgradeStateFactory>();
@@ -132,14 +140,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                     services.AddSingleton<ErrorCodeAccessor>();
 
                     services.AddStepManagement();
-
-                    services.AddTransient<IUpgradeStartup, ConsoleTelemetryOptIn>();
-                    services.AddTelemetry(options =>
-                    {
-                        context.Configuration.GetSection("Telemetry").Bind(options);
-
-                        options.ProductVersion = Constants.Version;
-                    });
                 });
 
             var host = configure(hostBuilder).UseConsoleLifetime(options =>

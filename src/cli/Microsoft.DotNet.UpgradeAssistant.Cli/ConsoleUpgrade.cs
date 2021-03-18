@@ -46,7 +46,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
         {
             using var context = await _contextFactory.CreateContext(token);
 
-            _telemetry.AddProperty("solutionId", context.InputPath);
+            _telemetry.AddProperty("Solution", context.InputPath);
 
             await _stateManager.LoadStateAsync(context, token);
 
@@ -62,8 +62,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                 {
                     ShowUpgradeSteps(steps, context, step);
 
-                    using (_telemetry.AddProperty("entrypoint", context.EntryPoint?.FilePath ?? string.Empty))
-                    using (_telemetry.AddProperty("projectId", context.CurrentProject?.FilePath ?? string.Empty))
+                    using (_telemetry.AddProperty("Entrypoint", context.EntryPoint?.FilePath ?? string.Empty))
+                    using (_telemetry.AddProperty("Project", context.CurrentProject?.FilePath ?? string.Empty))
                     {
                         using (_telemetry.AddProperty("stepId", step.Id))
                         {
