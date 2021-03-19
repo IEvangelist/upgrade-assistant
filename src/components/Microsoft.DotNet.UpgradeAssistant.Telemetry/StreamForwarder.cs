@@ -10,8 +10,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
-    [SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "Not doing localization for telemetry yet.")]
-    public sealed class StreamForwarder : IDisposable
+    internal sealed class StreamForwarder : IDisposable
     {
         private const char FlushBuilderCharacter = '\n';
 
