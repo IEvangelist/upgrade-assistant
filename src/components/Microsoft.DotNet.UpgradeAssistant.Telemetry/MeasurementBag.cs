@@ -5,7 +5,15 @@ using System.Collections.Generic;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
-    public class MeasurementBag : Dictionary<string, double>
+    public class MeasurementBag : ValueBag<double>
     {
+        public MeasurementBag()
+        {
+        }
+
+        public MeasurementBag(IReadOnlyDictionary<string, double>? other)
+            : base(other)
+        {
+        }
     }
 }

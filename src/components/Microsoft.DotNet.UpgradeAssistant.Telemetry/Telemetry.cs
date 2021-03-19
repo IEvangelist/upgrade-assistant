@@ -20,8 +20,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private readonly IStringHasher _hasher;
 
         private TelemetryClient? _client;
-        private Dictionary<string, string>? _commonProperties;
-        private Dictionary<string, double>? _commonMeasurements;
+        private PropertyBag? _commonProperties;
+        private MeasurementBag? _commonMeasurements;
         private Task _trackEventTask;
 
         private TelemetryOptions _options;
@@ -89,7 +89,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 _client.Context.Device.OperatingSystem = RuntimeEnvironment.OperatingSystem;
 
                 _commonProperties = commonProperties.GetTelemetryCommonProperties();
-                _commonMeasurements = new Dictionary<string, double>();
+                _commonMeasurements = new();
             }
             catch (Exception e)
             {
@@ -126,38 +126,22 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         private string PrependProducerNamespace(string eventName) => $"{_options.ProducerNamespace}/{eventName}";
 
-        private Dictionary<string, double> GetEventMeasures(IReadOnlyDictionary<string, double>? measurements)
+        private MeasurementBag GetEventMeasures(IReadOnlyDictionary<string, double>? measurements)
         {
-            var eventMeasurements = new Dictionary<string, double>(_commonMeasurements);
+            var eventMeasurements = new MeasurementBag(_commonMeasurements);
 
-            if (measurements != null)
-            {
-                foreach (KeyValuePair<string, double> measurement in measurements)
-                {
-                    eventMeasurements[measurement.Key] = measurement.Value;
-                }
-            }
+            eventMeasurements.AddAll(measurements);
 
             return eventMeasurements;
         }
 
-        private Dictionary<string, string>? GetEventProperties(IReadOnlyDictionary<string, string>? properties)
+        private PropertyBag? GetEventProperties(IReadOnlyDictionary<string, string>? properties)
         {
-            if (properties != null)
-            {
-                var eventProperties = new Dictionary<string, string>(_commonProperties);
+            var eventProperties = new PropertyBag(_commonProperties);
 
-                foreach (KeyValuePair<string, string> property in properties)
-                {
-                    eventProperties[property.Key] = property.Value;
-                }
+            eventProperties.AddAll(properties);
 
-                return eventProperties;
-            }
-            else
-            {
-                return _commonProperties;
-            }
+            return eventProperties;
         }
 
         public async ValueTask DisposeAsync()
@@ -170,7 +154,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         {
             if (_commonProperties is null)
             {
-                _commonProperties = new Dictionary<string, string>();
+                return new DelegateDisposable(static () => { });
             }
 
             // Continue task in existing parallel thread
@@ -178,7 +162,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 _ => _commonProperties[name] = hash ? _hasher.Hash(value) : value,
                 TaskScheduler.Default);
 
-            return new RemoveEntry(() =>
+            return new DelegateDisposable(() =>
             {
                 // Continue task in existing parallel thread
                 _trackEventTask = _trackEventTask.ContinueWith(
@@ -187,11 +171,11 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             });
         }
 
-        private sealed class RemoveEntry : IDisposable
+        private sealed class DelegateDisposable : IDisposable
         {
             private readonly Action _action;
 
-            public RemoveEntry(Action action)
+            public DelegateDisposable(Action action)
             {
                 _action = action;
             }

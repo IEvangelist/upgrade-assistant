@@ -43,9 +43,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         private readonly Func<string?> _getMACAddress;
 
-        public Dictionary<string, string> GetTelemetryCommonProperties()
-        {
-            return new Dictionary<string, string>
+        public PropertyBag GetTelemetryCommonProperties()
+            => new()
             {
                 { OSVersion, RuntimeEnvironment.OperatingSystemVersion },
                 { OSPlatform, RuntimeEnvironment.OperatingSystemPlatform.ToString() },
@@ -55,7 +54,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 { MachineId, GetMachineId() },
                 { KernelVersion, GetKernelVersion() }
             };
-        }
 
         private string GetMachineId()
         {
