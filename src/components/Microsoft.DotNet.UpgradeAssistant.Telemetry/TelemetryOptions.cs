@@ -9,22 +9,22 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         public string DisplayName { get; set; } = string.Empty;
 
-        private string ToolName => DisplayName.Replace(" ", string.Empty);
-
-        public string SentinelSuffix => $"dotnet{ToolName}FirstUseSentinel";
-
-        public string UserLevelCache => $"dotnet{ToolName}UserLevelCache";
-
         public string InstrumentationKey { get; set; } = string.Empty;
-
-        public string TelemetryOptout => $"DOTNET_{ToolName.ToUpperInvariant()}_TELEMTRY_OPTOUT";
-
-        public string ProducerNamespace => $"dotnet/{ToolName}";
 
         public string DetailsLink { get; set; } = string.Empty;
 
         public string CurrentSessionId { get; set; } = string.Empty;
 
-        public string SkipFirstTime => $"DOTNET_{ToolName.ToUpperInvariant()}_SKIP_FIRST_TIME_EXPERIENCE";
+        internal string TelemetryOptout => $"DOTNET_{ToolName.ToUpperInvariant()}_TELEMTRY_OPTOUT";
+
+        internal string ProducerNamespace => $"dotnet/{ToolName}";
+
+        internal string SentinelSuffix => $"dotnet{ToolName}FirstUseSentinel";
+
+        internal string UserLevelCache => $"dotnet{ToolName}UserLevelCache";
+
+        internal string SkipFirstTime => $"DOTNET_{ToolName.ToUpperInvariant()}_SKIP_FIRST_TIME_EXPERIENCE";
+
+        private string ToolName => DisplayName.Replace(" ", string.Empty);
     }
 }

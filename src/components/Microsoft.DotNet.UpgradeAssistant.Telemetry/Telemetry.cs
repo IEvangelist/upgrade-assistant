@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
@@ -19,6 +17,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     [SuppressMessage("Naming", "CA1724: Type names should not match namespaces", Justification = "Keeping it consistent with source implementations.")]
     internal sealed class Telemetry : ITelemetry
     {
+        private readonly IStringHasher _hasher;
+
         private TelemetryClient? _client;
         private Dictionary<string, string>? _commonProperties;
         private Dictionary<string, double>? _commonMeasurements;
@@ -29,6 +29,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         public Telemetry(
             IOptions<TelemetryOptions> options,
             TelemetryCommonProperties commonProperties,
+            IStringHasher hasher,
             IFirstTimeUseNoticeSentinel sentinel)
         {
             if (options is null)
@@ -36,6 +37,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 throw new ArgumentNullException(nameof(options));
             }
 
+            _hasher = hasher ?? throw new ArgumentNullException(nameof(hasher));
             _options = options.Value;
 
             Enabled = !EnvironmentHelper.GetEnvironmentVariableAsBool(_options.TelemetryOptout) && PermissionExists(sentinel);
@@ -173,7 +175,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
             // Continue task in existing parallel thread
             _trackEventTask = _trackEventTask.ContinueWith(
-                _ => _commonProperties[name] = hash ? HashString(value) : value,
+                _ => _commonProperties[name] = hash ? _hasher.Hash(value) : value,
                 TaskScheduler.Default);
 
             return new RemoveEntry(() =>
@@ -183,18 +185,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                     _ => _commonProperties?.Remove(name),
                     TaskScheduler.Default);
             });
-
-            static string HashString(string input)
-            {
-                if (input.Length == 0)
-                {
-                    return string.Empty;
-                }
-
-                using var hasher = SHA512.Create();
-                var hash = hasher.ComputeHash(Encoding.UTF8.GetBytes(input));
-                return Convert.ToBase64String(hash);
-            }
         }
 
         private sealed class RemoveEntry : IDisposable

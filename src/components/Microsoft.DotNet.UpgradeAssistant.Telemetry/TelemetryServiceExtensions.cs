@@ -24,6 +24,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IDockerContainerDetector, DockerContainerDetectorForTelemetry>();
             services.AddSingleton<IUserLevelCacheWriter, UserLevelCacheWriter>();
             services.AddSingleton<ITelemetry, Telemetry>();
+            services.AddSingleton<IStringHasher, Sha256Hasher>();
             services.AddSingleton<IFirstTimeUseNoticeSentinel, FirstTimeUseNoticeSentinel>();
         }
     }
