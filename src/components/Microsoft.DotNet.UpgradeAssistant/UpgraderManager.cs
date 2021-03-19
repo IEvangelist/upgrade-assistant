@@ -119,7 +119,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
                     _logger.LogInformation("Initializing upgrade step {StepTitle}", step.Title);
 
                     using (_telemetry.AddProperty("Step Id", step.Id))
-                    using (_telemetry.TimeEvent("step/initialize"))
+                    using (_telemetry.TimeStep("initialize", step))
                     {
                         await step.InitializeAsync(context, token).ConfigureAwait(false);
                     }
