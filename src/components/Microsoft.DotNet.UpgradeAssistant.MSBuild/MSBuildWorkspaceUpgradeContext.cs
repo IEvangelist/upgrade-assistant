@@ -45,6 +45,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
         public ITargetFrameworkMonikerFactory TfmFactory { get; }
 
+        public string? SolutionId => _workspace?.CurrentSolution.Id.Id.ToString();
+
         public bool IsComplete { get; set; }
 
         public MSBuildWorkspaceUpgradeContext(

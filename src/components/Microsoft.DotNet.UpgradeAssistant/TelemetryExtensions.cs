@@ -30,26 +30,24 @@ namespace Microsoft.DotNet.UpgradeAssistant
 
             foreach (var project in context.Projects)
             {
-                using (telemetry.AddProperty("Project", project.FilePath))
+                try
                 {
-                    try
+                    var properties = new PropertyBag
                     {
-                        var properties = new PropertyBag
-                        {
-                            { "Output Type", project.OutputType.ToString() },
-                            { "Target Frameworks", project.TFM.Name },
-                            { "Components", project.Components.ToString() },
-                            { "Project Types", string.Join(";", project.ProjectTypes) },
-                        };
+                        { "Project Id", project.Id },
+                        { "Output Type", project.OutputType.ToString() },
+                        { "Target Frameworks", project.TFM.Name },
+                        { "Components", project.Components.ToString() },
+                        { "Project Types", string.Join(";", project.ProjectTypes) },
+                    };
 
-                        telemetry.TrackEvent("project", properties);
-                    }
+                    telemetry.TrackEvent("project", properties);
+                }
 #pragma warning disable CA1031 // Do not catch general exception types
-                    catch (Exception e)
+                catch (Exception e)
 #pragma warning restore CA1031 // Do not catch general exception types
-                    {
-                        telemetry.TrackEvent("project/error", new PropertyBag { { "message", e.Message } });
-                    }
+                {
+                    telemetry.TrackEvent("project/error", new PropertyBag { { "message", e.Message } });
                 }
             }
         }

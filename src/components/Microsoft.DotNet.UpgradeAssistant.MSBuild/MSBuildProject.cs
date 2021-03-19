@@ -34,6 +34,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
             _logger = logger;
         }
 
+        public string Id => GetRoslynProject().Id.Id.ToString();
+
         public IEnumerable<IProject> ProjectReferences => GetRoslynProject().ProjectReferences.Select(p =>
         {
             var project = Context.Workspace.CurrentSolution.GetProject(p.ProjectId);

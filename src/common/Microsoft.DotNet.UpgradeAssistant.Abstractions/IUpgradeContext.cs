@@ -11,6 +11,8 @@ namespace Microsoft.DotNet.UpgradeAssistant
 {
     public interface IUpgradeContext : IDisposable
     {
+        string? SolutionId { get; }
+
         string InputPath { get; }
 
         bool IsComplete { get; set; }

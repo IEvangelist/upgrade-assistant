@@ -8,6 +8,8 @@ namespace Microsoft.DotNet.UpgradeAssistant
 {
     public interface IProject
     {
+        string Id { get; }
+
         string Directory { get; }
 
         string FilePath { get; }

@@ -150,7 +150,10 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             await _trackEventTask.ConfigureAwait(false);
         }
 
-        public IDisposable AddProperty(string name, string value, bool hash)
+        public IDisposable AddHashedProperty(string name, string value)
+            => AddProperty(name, _hasher.Hash(value));
+
+        public IDisposable AddProperty(string name, string value)
         {
             if (_commonProperties is null)
             {
@@ -159,7 +162,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
             // Continue task in existing parallel thread
             _trackEventTask = _trackEventTask.ContinueWith(
-                _ => _commonProperties[name] = hash ? _hasher.Hash(value) : value,
+                _ => _commonProperties[name] = value,
                 TaskScheduler.Default);
 
             return new DelegateDisposable(() =>
