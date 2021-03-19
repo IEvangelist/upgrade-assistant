@@ -10,16 +10,17 @@ namespace Microsoft.DotNet.UpgradeAssistant
 {
     internal class KnownStepsHasher : Sha256Hasher
     {
-        private readonly HashSet<string> _knownSteps;
+        private readonly Lazy<HashSet<string>> _knownSteps;
 
-        public KnownStepsHasher(IUpgradeStepOrderer steps)
+        public KnownStepsHasher(Lazy<IUpgradeStepOrderer> steps)
         {
-            _knownSteps = new HashSet<string>(steps.UpgradeSteps.Select(s => s.Id), StringComparer.Ordinal);
+            // Lazily create this so that it will be accessed after MSBuild is registered.
+            _knownSteps = new(() => new(steps.Value.UpgradeSteps.Select(s => s.Id), StringComparer.Ordinal));
         }
 
         public override string Hash(string text)
         {
-            if (_knownSteps.Contains(text))
+            if (_knownSteps.Value.Contains(text))
             {
                 return text;
             }

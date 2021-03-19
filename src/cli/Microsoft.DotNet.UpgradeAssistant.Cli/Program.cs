@@ -12,6 +12,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Autofac.Extensions.DependencyInjection;
 using Microsoft.DotNet.UpgradeAssistant.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -104,6 +105,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
 
             var hostBuilder = Host.CreateDefaultBuilder()
                 .UseContentRoot(AppContext.BaseDirectory)
+                .UseServiceProviderFactory(new AutofacServiceProviderFactory())
                 .ConfigureServices((context, services) =>
                 {
                     // Register this first so the first startup step is to check for telemetry opt-in

@@ -81,11 +81,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         {
             try
             {
-                var config = new ApplicationInsights.Extensibility.TelemetryConfiguration
-                {
-
-                };
+#pragma warning disable CS0618 // Type or member is obsolete
                 _client = new TelemetryClient();
+#pragma warning restore CS0618 // Type or member is obsolete
                 _client.InstrumentationKey = _options.InstrumentationKey;
                 _client.Context.Session.Id = _options.CurrentSessionId;
                 _client.Context.Device.OperatingSystem = RuntimeEnvironment.OperatingSystem;
