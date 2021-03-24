@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text.RegularExpressions;
 using Microsoft.Build.Construction;
+using Microsoft.Build.Exceptions;
 using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 
 namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
@@ -48,22 +49,28 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
         private static Dictionary<string, string> GetProjectMappings(string slnFile)
         {
-            var sln = SolutionFile.Parse(slnFile);
-
             var projectMapping = new Dictionary<string, string>();
 
-            foreach (var project in sln.ProjectsByGuid)
+            try
             {
-                if (project.Value.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat)
+                var sln = SolutionFile.Parse(slnFile);
+
+                foreach (var project in sln.ProjectsByGuid)
                 {
-                    projectMapping.Add(project.Value.AbsolutePath, project.Key);
+                    if (project.Value.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat)
+                    {
+                        projectMapping.Add(project.Value.AbsolutePath, project.Key);
+                    }
                 }
+            }
+            catch (InvalidProjectFileException)
+            {
             }
 
             return projectMapping;
         }
 
-        private bool TryGetSolutionId(string slnFile, [NotNullWhen(true)] out string? slnId)
+        private static bool TryGetSolutionId(string slnFile, [NotNullWhen(true)] out string? slnId)
         {
             var regex = new Regex(@"SolutionGuid = ({\S+})");
             var text = File.ReadAllText(slnFile);
