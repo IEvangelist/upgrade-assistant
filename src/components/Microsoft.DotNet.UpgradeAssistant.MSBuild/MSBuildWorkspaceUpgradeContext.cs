@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -28,6 +27,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
         public string InputPath { get; }
 
+        public ISolutionInfo SolutionInfo { get; }
+
         public bool InputIsSolution => InputPath.EndsWith(".sln", StringComparison.OrdinalIgnoreCase);
 
         public MSBuildWorkspace Workspace
@@ -45,7 +46,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
         public ITargetFrameworkMonikerFactory TfmFactory { get; }
 
-        public string? SolutionId => _workspace?.CurrentSolution.Id.Id.ToString();
+        public string? SolutionId => SolutionInfo.SolutionId;
 
         public bool IsComplete { get; set; }
 
@@ -53,6 +54,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
             UpgradeOptions options,
             ITargetFrameworkMonikerFactory tfmFactory,
             IVisualStudioFinder vsFinder,
+            Func<string, ISolutionInfo> infoGenerator,
             IComponentIdentifier componentIdentifier,
             ILogger<MSBuildWorkspaceUpgradeContext> logger)
         {
@@ -80,6 +82,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
             }
 
             _vsPath = vsPath;
+            SolutionInfo = infoGenerator(InputPath);
 
             GlobalProperties = CreateProperties();
             ProjectCollection = new ProjectCollection(globalProperties: GlobalProperties);
