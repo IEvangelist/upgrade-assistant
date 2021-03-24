@@ -55,7 +55,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                 _logger.LogError("{Message}", e.Message);
                 _errorCode.ErrorCode = ErrorCodes.UpgradeError;
 
-                _telemetry.TrackEvent("failure/upgrade", new PropertyBag { { "StackTrace", e.StackTrace ?? string.Empty } });
+                _telemetry.TrackEvent("failure/upgrade", new Dictionary<string, string> { { "StackTrace", e.StackTrace ?? string.Empty } });
             }
             catch (OperationCanceledException)
             {
@@ -67,11 +67,11 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                 _logger.LogError(e, "Unexpected error");
                 _errorCode.ErrorCode = ErrorCodes.UnexpectedError;
 
-                _telemetry.TrackEvent("failure/unknown", new PropertyBag { { "StackTrace", e.StackTrace ?? string.Empty } });
+                _telemetry.TrackEvent("failure/unknown", new Dictionary<string, string> { { "StackTrace", e.StackTrace ?? string.Empty } });
             }
             finally
             {
-                _telemetry.TrackEvent("exited", new PropertyBag { { "Exit Code", _errorCode.ErrorCode.ToString(CultureInfo.InvariantCulture) } });
+                _telemetry.TrackEvent("exited", new Dictionary<string, string> { { "Exit Code", _errorCode.ErrorCode.ToString(CultureInfo.InvariantCulture) } });
 
                 _lifetime.StopApplication();
             }

@@ -81,33 +81,30 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
             _queue.Add(client =>
             {
-                var eventProperties = GetEventProperties(properties);
-                var eventMeasurements = GetEventMeasures(measurements);
+                var eventProperties = CombineEventMetrics(_commonProperties, properties);
+                var eventMeasurements = CombineEventMetrics(_commonMeasurements, measurements);
 
                 client.TrackEvent(PrependProducerNamespace(eventName), eventProperties, eventMeasurements);
                 client.Flush();
             });
+
+            static Dictionary<string, TValue> CombineEventMetrics<TValue>(Dictionary<string, TValue>? commonMetrics, IReadOnlyDictionary<string, TValue>? other)
+            {
+                var metrics = new Dictionary<string, TValue>(commonMetrics);
+
+                if (other is not null)
+                {
+                    foreach (var item in other)
+                    {
+                        metrics[item.Key] = item.Value;
+                    }
+                }
+
+                return metrics;
+            }
         }
 
         private string PrependProducerNamespace(string eventName) => $"{_options.ProducerNamespace}/{eventName}";
-
-        private MeasurementBag GetEventMeasures(IReadOnlyDictionary<string, double>? measurements)
-        {
-            var eventMeasurements = new MeasurementBag(_commonMeasurements);
-
-            eventMeasurements.AddAll(measurements);
-
-            return eventMeasurements;
-        }
-
-        private PropertyBag? GetEventProperties(IReadOnlyDictionary<string, string>? properties)
-        {
-            var eventProperties = new PropertyBag(_commonProperties);
-
-            eventProperties.AddAll(properties);
-
-            return eventProperties;
-        }
 
         public async ValueTask DisposeAsync()
         {

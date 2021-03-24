@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Collections.Generic;
 using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 
 namespace Microsoft.DotNet.UpgradeAssistant
@@ -32,7 +33,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
             {
                 try
                 {
-                    var properties = new PropertyBag
+                    var properties = new Dictionary<string, string>
                     {
                         { "Project Id", project.Id },
                         { "Output Type", project.OutputType.ToString() },
@@ -47,7 +48,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
                 catch (Exception e)
 #pragma warning restore CA1031 // Do not catch general exception types
                 {
-                    telemetry.TrackEvent("project/error", new PropertyBag { { "message", e.Message } });
+                    telemetry.TrackEvent("project/error", new Dictionary<string, string> { { "message", e.Message } });
                 }
             }
         }

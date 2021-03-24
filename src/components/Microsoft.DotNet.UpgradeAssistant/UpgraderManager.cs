@@ -39,7 +39,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
                 throw new ArgumentNullException(nameof(context));
             }
 
-            _telemetry.TrackEvent("initialize", measurements: new MeasurementBag { { "Project Count", context.Projects.Count() } });
+            _telemetry.TrackEvent("initialize", measurements: new Dictionary<string, double> { { "Project Count", context.Projects.Count() } });
             _telemetry.TrackProjectProperties(context);
 
             if (context.EntryPoint is not null)

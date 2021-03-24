@@ -78,7 +78,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
                 }
             }
 
-            _telemetry.TrackEvent("msbuild", new PropertyBag { { "MSBuild Version", _instance.Version.ToString() } });
+            _telemetry.TrackEvent("msbuild", new Dictionary<string, string> { { "MSBuild Version", _instance.Version.ToString() } });
 
             return _instance.MSBuildPath;
         }

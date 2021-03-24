@@ -2,25 +2,26 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
     public static class TelemetryExtensions
     {
-        public static IDisposable TimeEvent(this ITelemetry telemetry, string eventName, PropertyBag? properties = null, MeasurementBag? measurements = null, Action<PropertyBag, MeasurementBag>? onComplete = null)
+        public static IDisposable TimeEvent(this ITelemetry telemetry, string eventName, Dictionary<string, string>? properties = null, Dictionary<string, double>? measurements = null, Action<Dictionary<string, string>, Dictionary<string, double>>? onComplete = null)
             => new TimedEvent(telemetry, eventName, properties, measurements, onComplete);
 
         private class TimedEvent : IDisposable
         {
             private readonly ITelemetry _telemetry;
             private readonly string _eventName;
-            private readonly PropertyBag? _properties;
-            private readonly MeasurementBag? _measurements;
-            private readonly Action<PropertyBag, MeasurementBag>? _onComplete;
+            private readonly Dictionary<string, string>? _properties;
+            private readonly Dictionary<string, double>? _measurements;
+            private readonly Action<Dictionary<string, string>, Dictionary<string, double>>? _onComplete;
             private readonly Stopwatch _stopwatch;
 
-            public TimedEvent(ITelemetry telemetry, string eventName, PropertyBag? properties, MeasurementBag? measurements, Action<PropertyBag, MeasurementBag>? onComplete)
+            public TimedEvent(ITelemetry telemetry, string eventName, Dictionary<string, string>? properties, Dictionary<string, double>? measurements, Action<Dictionary<string, string>, Dictionary<string, double>>? onComplete)
             {
                 _telemetry = telemetry;
                 _eventName = eventName;
@@ -34,8 +35,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             {
                 _stopwatch.Stop();
 
-                var measurements = _measurements ?? new MeasurementBag();
-                var properties = _properties ?? new PropertyBag();
+                var measurements = _measurements ?? new Dictionary<string, double>();
+                var properties = _properties ?? new Dictionary<string, string>();
 
                 measurements.Add("Duration", _stopwatch.ElapsedTicks);
 

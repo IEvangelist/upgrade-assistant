@@ -43,7 +43,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private readonly IStringHasher _hasher;
         private readonly IMacAddressProvider _macAddressProvider;
 
-        public PropertyBag GetTelemetryCommonProperties()
+        public Dictionary<string, string> GetTelemetryCommonProperties()
             => new()
             {
                 { OSVersion, RuntimeEnvironment.OperatingSystemVersion },
