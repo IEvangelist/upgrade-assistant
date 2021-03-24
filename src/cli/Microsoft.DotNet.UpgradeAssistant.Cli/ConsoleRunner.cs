@@ -73,7 +73,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             {
                 _telemetry.TrackEvent("exited", new PropertyBag { { "Exit Code", _errorCode.ErrorCode.ToString(CultureInfo.InvariantCulture) } });
 
-                await _telemetry.DisposeAsync();
                 _lifetime.StopApplication();
             }
         }
