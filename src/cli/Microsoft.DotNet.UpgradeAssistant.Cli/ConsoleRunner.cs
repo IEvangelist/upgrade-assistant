@@ -38,7 +38,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "We want all errors to be caught before exiting this method")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "This method should not throw any exceptions.")]
         public async Task StartAsync(CancellationToken token)
         {
             try

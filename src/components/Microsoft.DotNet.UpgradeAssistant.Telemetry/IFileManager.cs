@@ -13,6 +13,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         void WriteAllText(string path, string text);
 
+        void WriteAllBytes(string path, byte[] bytes);
+
         string ReadAllText(string path);
     }
 }
