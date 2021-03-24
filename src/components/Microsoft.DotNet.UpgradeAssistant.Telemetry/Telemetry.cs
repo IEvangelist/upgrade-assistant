@@ -126,7 +126,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         {
             if (_queue is null)
             {
-                return new RemoveEntry(static () => { });
+                return new DelegateDisposable(static () => { });
             }
 
             if (_commonProperties is null)
@@ -134,9 +134,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 return new DelegateDisposable(static () => { });
             }
 
-            _queue.Add(_ => _commonProperties[name] = hash ? _hasher.Hash(value) : value);
+            _queue.Add(_ => _commonProperties[name] = value);
 
-            return new RemoveEntry(() => _queue.Add(_ => _commonProperties.Remove(name)));
+            return new DelegateDisposable(() => _queue.Add(_ => _commonProperties.Remove(name)));
         }
 
         private sealed class DelegateDisposable : IDisposable

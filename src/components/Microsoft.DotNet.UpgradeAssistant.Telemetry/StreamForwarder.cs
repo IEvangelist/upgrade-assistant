@@ -39,7 +39,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         public StreamForwarder ForwardTo(Action<string> writeLine)
         {
-
             ThrowIfForwarderSet();
 
             _writeLine = writeLine ?? throw new ArgumentNullException(nameof(writeLine));
