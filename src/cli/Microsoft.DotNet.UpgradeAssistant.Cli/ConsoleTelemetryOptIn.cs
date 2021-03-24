@@ -29,6 +29,8 @@ namespace Microsoft.DotNet.UpgradeAssistant
                 _io.Output.WriteLine(new string('-', 10));
                 _io.Output.WriteLine(_sentinel.DisclosureText);
                 _io.Output.WriteLine();
+
+                _sentinel.CreateIfNotExists();
             }
 
             return Task.FromResult(true);

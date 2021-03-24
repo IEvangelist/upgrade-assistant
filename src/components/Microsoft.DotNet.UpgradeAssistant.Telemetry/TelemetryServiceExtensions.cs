@@ -20,6 +20,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 })
                 .Configure(configure);
 
+            services.AddSingleton<IMacAddressProvider, MacAddressGetter>();
+            services.AddSingleton<IFileManager, FileManager>();
             services.AddTransient<TelemetryCommonProperties>();
             services.AddSingleton<IDockerContainerDetector, DockerContainerDetectorForTelemetry>();
             services.AddSingleton<IUserLevelCacheWriter, UserLevelCacheWriter>();

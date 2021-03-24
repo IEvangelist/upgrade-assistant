@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
-    internal static class MacAddressGetter
+    internal class MacAddressGetter : IMacAddressProvider
     {
         private const string InvalidMacAddress = "00-00-00-00-00-00";
         private const string MacRegex = @"(?:[a-z0-9]{2}[:\-]){5}[a-z0-9]{2}";
@@ -21,7 +21,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private const int ErrorFileNotFound = 0x2;
 
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "We don't want any errors in telemetry to cause failures in the product.")]
-        public static string? GetMacAddress()
+        public string? GetMacAddress()
         {
             try
             {

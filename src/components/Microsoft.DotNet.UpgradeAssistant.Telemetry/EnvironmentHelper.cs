@@ -15,19 +15,12 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 return defaultValue;
             }
 
-            switch (str.ToUpperInvariant())
+            return str.ToUpperInvariant() switch
             {
-                case "TRUE":
-                case "1":
-                case "YES":
-                    return true;
-                case "FALSE":
-                case "0":
-                case "NO":
-                    return false;
-                default:
-                    return defaultValue;
-            }
+                "TRUE" or "1" or "YES" => true,
+                "FALSE" or "0" or "NO" => false,
+                _ => defaultValue,
+            };
         }
     }
 }
