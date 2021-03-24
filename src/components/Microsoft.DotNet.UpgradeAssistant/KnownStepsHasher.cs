@@ -15,7 +15,24 @@ namespace Microsoft.DotNet.UpgradeAssistant
         public KnownStepsHasher(Lazy<IUpgradeStepOrderer> steps)
         {
             // Lazily create this so that it will be accessed after MSBuild is registered.
-            _knownSteps = new(() => new(steps.Value.UpgradeSteps.Select(s => s.Id), StringComparer.Ordinal));
+            _knownSteps = new(() =>
+            {
+                var token = typeof(KnownStepsHasher).Assembly.GetName().GetPublicKeyToken();
+
+                var set = new HashSet<string>();
+
+                foreach (var step in steps.Value.UpgradeSteps)
+                {
+                    var stepToken = step.GetType().Assembly.GetName().GetPublicKeyToken();
+
+                    if (token.SequenceEqual(stepToken))
+                    {
+                        set.Add(step.Id);
+                    }
+                }
+
+                return set;
+            });
         }
 
         public override string Hash(string text)

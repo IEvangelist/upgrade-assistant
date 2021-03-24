@@ -123,9 +123,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
         public void SetEntryPoint(IProject? entryPoint) => _entryPointPath = entryPoint?.FilePath;
 
-        private IReadOnlyCollection<IProject>? _projects;
-
-        public IReadOnlyCollection<IProject> Projects
+        public IEnumerable<IProject> Projects
         {
             get
             {
@@ -134,26 +132,17 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
                     throw new InvalidOperationException("Context has not been initialized");
                 }
 
-                if (_projects is null)
+                foreach (var project in _workspace.CurrentSolution.Projects)
                 {
-                    var projects = new List<IProject>();
-
-                    foreach (var project in _workspace.CurrentSolution.Projects)
+                    if (project.FilePath is null)
                     {
-                        if (project.FilePath is null)
-                        {
-                            _logger.LogWarning("Found a project with no file path {Project}", project);
-                        }
-                        else
-                        {
-                            projects.Add(GetOrAddProject(project.FilePath));
-                        }
+                        _logger.LogWarning("Found a project with no file path {Project}", project);
                     }
-
-                    _projects = projects;
+                    else
+                    {
+                        yield return GetOrAddProject(project.FilePath);
+                    }
                 }
-
-                return _projects;
             }
         }
 

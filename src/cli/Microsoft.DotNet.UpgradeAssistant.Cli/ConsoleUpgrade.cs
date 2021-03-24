@@ -115,7 +115,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
 
         private async ValueTask<bool> ExecuteAndTimeCommand(IUpgradeContext context, UpgradeStep step, UpgradeCommand command, CancellationToken token)
         {
-            using (_telemetry.TimeStep("apply", step))
+            using (_telemetry.TimeStep(command.Id, step))
             {
                 return await command.ExecuteAsync(context, token);
             }

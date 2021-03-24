@@ -39,11 +39,10 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         public StreamForwarder ForwardTo(Action<string> writeLine)
         {
-            ThrowIfNull(writeLine);
 
             ThrowIfForwarderSet();
 
-            _writeLine = writeLine;
+            _writeLine = writeLine ?? throw new ArgumentNullException(nameof(writeLine));
 
             return this;
         }
@@ -100,23 +99,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         private void WriteLine(string str)
         {
-            if (_capture != null)
-            {
-                _capture.WriteLine(str);
-            }
-
-            if (_writeLine != null)
-            {
-                _writeLine(str);
-            }
-        }
-
-        private static void ThrowIfNull(object obj)
-        {
-            if (obj == null)
-            {
-                throw new ArgumentNullException(nameof(obj));
-            }
+            _capture?.WriteLine(str);
+            _writeLine?.Invoke(str);
         }
 
         private void ThrowIfForwarderSet()

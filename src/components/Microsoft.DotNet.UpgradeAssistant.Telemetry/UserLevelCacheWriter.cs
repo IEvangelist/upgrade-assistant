@@ -11,41 +11,14 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     {
         private readonly TelemetryOptions _options;
         private readonly string _dotnetUpgradeAssistantUserProfileFolderPath;
-        private readonly Func<string, bool> _fileExists;
-        private readonly Func<string, bool> _directoryExists;
-        private readonly Action<string> _createDirectory;
-        private readonly Action<string, string> _writeAllText;
-        private readonly Func<string, string> _readAllText;
+        private readonly IFileManager _fileManager;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Options are always provided")]
-        public UserLevelCacheWriter(IOptions<TelemetryOptions> options)
-            : this(
-                options.Value,
-                Paths.DotnetUserProfileFolderPath,
-                File.Exists,
-                Directory.Exists,
-                path => Directory.CreateDirectory(path),
-                File.WriteAllText,
-                File.ReadAllText)
+        public UserLevelCacheWriter(IOptions<TelemetryOptions> options, IFileManager fileManager)
         {
-        }
-
-        private UserLevelCacheWriter(
-            TelemetryOptions options,
-            string dotnetUserProfileFolderPath,
-            Func<string, bool> fileExists,
-            Func<string, bool> directoryExists,
-            Action<string> createDirectory,
-            Action<string, string> writeAllText,
-            Func<string, string> readAllText)
-        {
-            _options = options;
-            _dotnetUpgradeAssistantUserProfileFolderPath = dotnetUserProfileFolderPath;
-            _fileExists = fileExists;
-            _directoryExists = directoryExists;
-            _createDirectory = createDirectory;
-            _writeAllText = writeAllText;
-            _readAllText = readAllText;
+            _options = options.Value;
+            _dotnetUpgradeAssistantUserProfileFolderPath = Paths.DotnetUserProfileFolderPath;
+            _fileManager = fileManager;
         }
 
         public string RunWithCache(string cacheKey, Func<string> getValueToCache)
@@ -55,21 +28,21 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             var cacheFilepath = GetCacheFilePath(cacheKey);
             try
             {
-                if (!_fileExists(cacheFilepath))
+                if (!_fileManager.FileExists(cacheFilepath))
                 {
-                    if (!_directoryExists(_dotnetUpgradeAssistantUserProfileFolderPath))
+                    if (!_fileManager.DirectoryExists(_dotnetUpgradeAssistantUserProfileFolderPath))
                     {
-                        _createDirectory(_dotnetUpgradeAssistantUserProfileFolderPath);
+                        _fileManager.CreateDirectory(_dotnetUpgradeAssistantUserProfileFolderPath);
                     }
 
                     var runResult = getValueToCache();
 
-                    _writeAllText(cacheFilepath, runResult);
+                    _fileManager.WriteAllText(cacheFilepath, runResult);
                     return runResult;
                 }
                 else
                 {
-                    return _readAllText(cacheFilepath);
+                    return _fileManager.ReadAllText(cacheFilepath);
                 }
             }
             catch (Exception ex)

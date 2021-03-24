@@ -27,11 +27,12 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             IOptions<TelemetryOptions> options,
             IDockerContainerDetector dockerContainerDetector,
             IStringHasher hasher,
+            IMacAddressProvider macAddressProvider,
             IUserLevelCacheWriter userLevelCacheWriter)
         {
             _options = options;
             _hasher = hasher;
-            _getMACAddress = MacAddressGetter.GetMacAddress;
+            _macAddressProvider = macAddressProvider;
             _dockerContainerDetector = dockerContainerDetector;
             _userLevelCacheWriter = userLevelCacheWriter;
         }
@@ -40,8 +41,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private readonly IDockerContainerDetector _dockerContainerDetector;
         private readonly IOptions<TelemetryOptions> _options;
         private readonly IStringHasher _hasher;
-
-        private readonly Func<string?> _getMACAddress;
+        private readonly IMacAddressProvider _macAddressProvider;
 
         public PropertyBag GetTelemetryCommonProperties()
             => new()
@@ -59,7 +59,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         {
             return _userLevelCacheWriter.RunWithCache(MachineIdCacheKey, () =>
             {
-                var macAddress = _getMACAddress();
+                var macAddress = _macAddressProvider.GetMacAddress();
                 if (macAddress != null)
                 {
                     return _hasher.Hash(macAddress);

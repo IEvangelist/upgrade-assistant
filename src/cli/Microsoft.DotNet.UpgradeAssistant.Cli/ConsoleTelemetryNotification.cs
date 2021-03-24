@@ -9,12 +9,12 @@ using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 
 namespace Microsoft.DotNet.UpgradeAssistant
 {
-    public class ConsoleTelemetryOptIn : IUpgradeStartup
+    public class ConsoleTelemetryNotification : IUpgradeStartup
     {
         private readonly IFirstTimeUseNoticeSentinel _sentinel;
         private readonly InputOutputStreams _io;
 
-        public ConsoleTelemetryOptIn(IFirstTimeUseNoticeSentinel sentinel, InputOutputStreams io)
+        public ConsoleTelemetryNotification(IFirstTimeUseNoticeSentinel sentinel, InputOutputStreams io)
         {
             _sentinel = sentinel ?? throw new ArgumentNullException(nameof(sentinel));
             _io = io ?? throw new ArgumentNullException(nameof(io));
@@ -29,6 +29,8 @@ namespace Microsoft.DotNet.UpgradeAssistant
                 _io.Output.WriteLine(new string('-', 10));
                 _io.Output.WriteLine(_sentinel.DisclosureText);
                 _io.Output.WriteLine();
+
+                _sentinel.CreateIfNotExists();
             }
 
             return Task.FromResult(true);

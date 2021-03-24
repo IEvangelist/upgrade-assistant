@@ -105,11 +105,13 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
 
             var hostBuilder = Host.CreateDefaultBuilder()
                 .UseContentRoot(AppContext.BaseDirectory)
+
+                // Using Autofac for its support of implicit registrations (ie Lazy<>, Task<> etc)
                 .UseServiceProviderFactory(new AutofacServiceProviderFactory())
                 .ConfigureServices((context, services) =>
                 {
                     // Register this first so the first startup step is to check for telemetry opt-in
-                    services.AddTransient<IUpgradeStartup, ConsoleTelemetryOptIn>();
+                    services.AddTransient<IUpgradeStartup, ConsoleTelemetryNotification>();
                     services.AddTelemetry(options =>
                     {
                         context.Configuration.GetSection("Telemetry").Bind(options);

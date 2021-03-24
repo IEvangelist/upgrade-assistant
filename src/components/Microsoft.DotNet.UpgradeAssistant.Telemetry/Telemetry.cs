@@ -3,28 +3,25 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.DotNet.PlatformAbstractions;
 using Microsoft.Extensions.Options;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "We don't want any errors in telemetry to cause failures in the product.")]
     [SuppressMessage("Naming", "CA1724: Type names should not match namespaces", Justification = "Keeping it consistent with source implementations.")]
     internal sealed class Telemetry : ITelemetry
     {
         private readonly IStringHasher _hasher;
+        private readonly TelemetryConfiguration? _telemetryConfig;
+        private readonly SerializedQueue<TelemetryClient>? _queue;
+        private readonly TelemetryOptions _options;
 
-        private TelemetryClient? _client;
-        private PropertyBag? _commonProperties;
-        private MeasurementBag? _commonMeasurements;
-        private Task _trackEventTask;
-
-        private TelemetryOptions _options;
+        private Dictionary<string, string>? _commonProperties;
+        private Dictionary<string, double>? _commonMeasurements;
 
         public Telemetry(
             IOptions<TelemetryOptions> options,
@@ -44,12 +41,23 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
             if (!Enabled)
             {
-                _trackEventTask = Task.CompletedTask;
                 return;
             }
 
-            // Initialize in task to offload to parallel thread
-            _trackEventTask = Task.Factory.StartNew(() => InitializeTelemetry(commonProperties), CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
+            _telemetryConfig = TelemetryConfiguration.CreateDefault();
+            _queue = new SerializedQueue<TelemetryClient>(() =>
+            {
+                var client = new TelemetryClient(_telemetryConfig);
+
+                client.InstrumentationKey = _options.InstrumentationKey;
+                client.Context.Session.Id = _options.CurrentSessionId;
+                client.Context.Device.OperatingSystem = RuntimeEnvironment.OperatingSystem;
+
+                _commonProperties = commonProperties.GetTelemetryCommonProperties();
+                _commonMeasurements = new Dictionary<string, double>();
+
+                return client;
+            });
         }
 
         public bool Enabled { get; }
@@ -66,62 +74,19 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         public void TrackEvent(string eventName, IReadOnlyDictionary<string, string>? properties, IReadOnlyDictionary<string, double>? measurements)
         {
-            if (!Enabled)
+            if (!Enabled || _queue is null)
             {
                 return;
             }
 
-            // Continue task in existing parallel thread
-            _trackEventTask = _trackEventTask.ContinueWith(
-                x => TrackEventTask(eventName, properties, measurements),
-                TaskScheduler.Default);
-        }
-
-        private void InitializeTelemetry(TelemetryCommonProperties commonProperties)
-        {
-            try
-            {
-#pragma warning disable CS0618 // Type or member is obsolete
-                _client = new TelemetryClient();
-#pragma warning restore CS0618 // Type or member is obsolete
-                _client.InstrumentationKey = _options.InstrumentationKey;
-                _client.Context.Session.Id = _options.CurrentSessionId;
-                _client.Context.Device.OperatingSystem = RuntimeEnvironment.OperatingSystem;
-
-                _commonProperties = commonProperties.GetTelemetryCommonProperties();
-                _commonMeasurements = new();
-            }
-            catch (Exception e)
-            {
-                _client = null;
-
-                // We don't want to fail the tool if telemetry fails.
-                Debug.Fail(e.ToString());
-            }
-        }
-
-        private void TrackEventTask(
-            string eventName,
-            IReadOnlyDictionary<string, string>? properties,
-            IReadOnlyDictionary<string, double>? measurements)
-        {
-            if (_client == null)
-            {
-                return;
-            }
-
-            try
+            _queue.Add(client =>
             {
                 var eventProperties = GetEventProperties(properties);
                 var eventMeasurements = GetEventMeasures(measurements);
 
-                _client.TrackEvent(PrependProducerNamespace(eventName), eventProperties, eventMeasurements);
-                _client.Flush();
-            }
-            catch (Exception e)
-            {
-                Debug.Fail(e.ToString());
-            }
+                client.TrackEvent(PrependProducerNamespace(eventName), eventProperties, eventMeasurements);
+                client.Flush();
+            });
         }
 
         private string PrependProducerNamespace(string eventName) => $"{_options.ProducerNamespace}/{eventName}";
@@ -146,8 +111,12 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         public async ValueTask DisposeAsync()
         {
-            _client?.Flush();
-            await _trackEventTask.ConfigureAwait(false);
+            _telemetryConfig?.Dispose();
+
+            if (_queue is not null)
+            {
+                await _queue.DisposeAsync().ConfigureAwait(false);
+            }
         }
 
         public IDisposable AddHashedProperty(string name, string value)
@@ -155,23 +124,19 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         public IDisposable AddProperty(string name, string value)
         {
+            if (_queue is null)
+            {
+                return new RemoveEntry(static () => { });
+            }
+
             if (_commonProperties is null)
             {
                 return new DelegateDisposable(static () => { });
             }
 
-            // Continue task in existing parallel thread
-            _trackEventTask = _trackEventTask.ContinueWith(
-                _ => _commonProperties[name] = value,
-                TaskScheduler.Default);
+            _queue.Add(_ => _commonProperties[name] = hash ? _hasher.Hash(value) : value);
 
-            return new DelegateDisposable(() =>
-            {
-                // Continue task in existing parallel thread
-                _trackEventTask = _trackEventTask.ContinueWith(
-                    _ => _commonProperties?.Remove(name),
-                    TaskScheduler.Default);
-            });
+            return new RemoveEntry(() => _queue.Add(_ => _commonProperties.Remove(name)));
         }
 
         private sealed class DelegateDisposable : IDisposable

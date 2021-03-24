@@ -54,7 +54,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                 new SeeMoreDetailsCommand(step, ShowStepStatus)
             };
 
-            if (context.Projects.Count > 1 && context.CurrentProject is not null)
+            if (context.Projects.Count() > 1 && context.CurrentProject is not null)
             {
                 commands.Add(new SelectProjectCommand());
             }

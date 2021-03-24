@@ -25,7 +25,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
 
         void SetCurrentProject(IProject? project);
 
-        IReadOnlyCollection<IProject> Projects { get; }
+        IEnumerable<IProject> Projects { get; }
 
         bool InputIsSolution { get; }
 
