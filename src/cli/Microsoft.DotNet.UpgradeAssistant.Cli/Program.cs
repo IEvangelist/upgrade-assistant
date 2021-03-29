@@ -73,7 +73,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                 services.AddScoped<IAppCommand, ConsoleUpgrade>();
             }), token);
 
-        private static IHostBuilder EnableLogging(UpgradeOptions options, IHostBuilder host)
+        private static IHostBuilder EnableLogging(UpgradeOptions options, ParseResult parseResult, IHostBuilder host)
         {
             var logSettings = new LogSettings(options.Verbose);
 
@@ -81,6 +81,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton(logSettings);
+
+                    services.AddSingleton(parseResult);
+                    services.AddTransient<IUpgradeStartup, UsedCommandTelemetry>();
                 })
                 .UseSerilog((_, __, loggerConfiguration) => loggerConfiguration
                     .Enrich.FromLogContext()
@@ -219,7 +222,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
 
         private static void ConfigureUpgradeCommand(Command command)
         {
-            command.Handler = CommandHandler.Create<UpgradeOptions, CancellationToken>((options, token) => RunUpgradeAsync(options, host => EnableLogging(options, host), token));
+            command.Handler = CommandHandler.Create<ParseResult, UpgradeOptions, CancellationToken>((result, options, token) => RunUpgradeAsync(options, host => EnableLogging(options, result, host), token));
 
             command.AddArgument(new Argument<FileInfo>("project") { Arity = ArgumentArity.ExactlyOne }.ExistingOnly());
             command.AddOption(new Option<bool>(new[] { "--skip-backup" }, "Disables backing up the project. This is not recommended unless the project is in source control since this tool will make large changes to both the project and source files."));
