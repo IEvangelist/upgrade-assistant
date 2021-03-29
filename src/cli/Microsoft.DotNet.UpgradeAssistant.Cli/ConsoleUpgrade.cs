@@ -46,40 +46,39 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
         {
             using var context = await _contextFactory.CreateContext(token);
 
-            _telemetry.AddProperty("Solution Id", context.SolutionId ?? string.Empty);
-
-            await _stateManager.LoadStateAsync(context, token);
-
-            try
+            using (_telemetry.AddProperty("Solution Id", () => context.SolutionId ?? string.Empty))
+            using (_telemetry.AddProperty("Entrypoint Id", () => context.EntryPoint?.Id ?? string.Empty))
+            using (_telemetry.AddProperty("Project Id", () => context.CurrentProject?.Id ?? string.Empty))
             {
-                // Cache current steps here as defense-in-depth against the possibility
-                // of a bug (or very weird upgrade step behavior) causing the current step
-                // to reset state after being initialized by GetNextStepAsync
-                var steps = await _upgrader.InitializeAsync(context, token);
-                var step = await _upgrader.GetNextStepAsync(context, token);
+                await _stateManager.LoadStateAsync(context, token);
 
-                while (step is not null)
+                try
                 {
-                    ShowUpgradeSteps(steps, context, step);
+                    // Cache current steps here as defense-in-depth against the possibility
+                    // of a bug (or very weird upgrade step behavior) causing the current step
+                    // to reset state after being initialized by GetNextStepAsync
+                    var steps = await _upgrader.InitializeAsync(context, token);
+                    var step = await _upgrader.GetNextStepAsync(context, token);
 
-                    using (_telemetry.AddProperty("Entrypoint Id", context.EntryPoint?.Id ?? string.Empty))
-                    using (_telemetry.AddProperty("Project Id", context.CurrentProject?.Id ?? string.Empty))
+                    while (step is not null)
                     {
-                        using (_telemetry.AddProperty("Step Id", step.Id))
+                        ShowUpgradeSteps(steps, context, step);
+
+                        using (_telemetry.AddProperty("Step Id", () => step.Id))
                         {
                             await RunStepAsync(context, step, token);
                         }
 
                         step = await _upgrader.GetNextStepAsync(context, token);
                     }
-                }
 
-                _logger.LogInformation("Upgrade has completed. Please review any changes.");
-            }
-            finally
-            {
-                // Do not pass the same token as it may have been canceled and we still need to persist this.
-                await _stateManager.SaveStateAsync(context, default);
+                    _logger.LogInformation("Upgrade has completed. Please review any changes.");
+                }
+                finally
+                {
+                    // Do not pass the same token as it may have been canceled and we still need to persist this.
+                    await _stateManager.SaveStateAsync(context, default);
+                }
             }
         }
 

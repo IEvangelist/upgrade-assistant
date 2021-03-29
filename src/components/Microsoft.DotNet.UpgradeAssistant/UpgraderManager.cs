@@ -118,7 +118,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
                     // expected to initialize their children during their own initialization
                     _logger.LogInformation("Initializing upgrade step {StepTitle}", step.Title);
 
-                    using (_telemetry.AddHashedProperty("Step Id", step.Id))
+                    using (_telemetry.AddHashedProperty("Step Id", () => step.Id))
                     using (_telemetry.TimeStep("initialize", step))
                     {
                         await step.InitializeAsync(context, token).ConfigureAwait(false);

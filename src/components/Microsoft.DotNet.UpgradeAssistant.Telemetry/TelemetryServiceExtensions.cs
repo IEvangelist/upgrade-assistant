@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -22,12 +23,13 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddSingleton<IMacAddressProvider, MacAddressGetter>();
             services.AddSingleton<IFileManager, FileManager>();
-            services.AddTransient<TelemetryCommonProperties>();
             services.AddSingleton<IDockerContainerDetector, DockerContainerDetectorForTelemetry>();
             services.AddSingleton<IUserLevelCacheWriter, UserLevelCacheWriter>();
             services.AddSingleton<ITelemetry, Telemetry>();
             services.AddSingleton<IStringHasher, Sha256Hasher>();
             services.AddSingleton<IFirstTimeUseNoticeSentinel, FirstTimeUseNoticeSentinel>();
+
+            services.AddSingleton<ITelemetryInitializer, TelemetryCommonProperties>();
         }
     }
 }

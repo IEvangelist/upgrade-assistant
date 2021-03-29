@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.DotNet.PlatformAbstractions;
 using Microsoft.Extensions.Options;
@@ -20,12 +21,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private readonly SerializedQueue<TelemetryClient>? _queue;
         private readonly TelemetryOptions _options;
 
-        private Dictionary<string, string>? _commonProperties;
-        private Dictionary<string, double>? _commonMeasurements;
-
         public Telemetry(
             IOptions<TelemetryOptions> options,
-            TelemetryCommonProperties commonProperties,
+            IEnumerable<ITelemetryInitializer> initializers,
             IStringHasher hasher,
             IFirstTimeUseNoticeSentinel sentinel)
         {
@@ -45,6 +43,12 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             }
 
             _telemetryConfig = TelemetryConfiguration.CreateDefault();
+
+            foreach (var initializer in initializers)
+            {
+                _telemetryConfig.TelemetryInitializers.Add(initializer);
+            }
+
             _queue = new SerializedQueue<TelemetryClient>(() =>
             {
                 var client = new TelemetryClient(_telemetryConfig);
@@ -52,9 +56,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 client.InstrumentationKey = _options.InstrumentationKey;
                 client.Context.Session.Id = _options.CurrentSessionId;
                 client.Context.Device.OperatingSystem = RuntimeEnvironment.OperatingSystem;
-
-                _commonProperties = commonProperties.GetTelemetryCommonProperties();
-                _commonMeasurements = new Dictionary<string, double>();
 
                 return client;
             });
@@ -72,7 +73,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             return sentinel.Exists();
         }
 
-        public void TrackEvent(string eventName, IReadOnlyDictionary<string, string>? properties, IReadOnlyDictionary<string, double>? measurements)
+        public void TrackEvent(string eventName, IDictionary<string, string>? properties, IDictionary<string, double>? measurements)
         {
             if (!Enabled || _queue is null)
             {
@@ -81,27 +82,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
             _queue.Add(client =>
             {
-                var eventProperties = CombineEventMetrics(_commonProperties, properties);
-                var eventMeasurements = CombineEventMetrics(_commonMeasurements, measurements);
-
-                client.TrackEvent(PrependProducerNamespace(eventName), eventProperties, eventMeasurements);
+                client.TrackEvent(PrependProducerNamespace(eventName), properties, measurements);
                 client.Flush();
             });
-
-            static Dictionary<string, TValue> CombineEventMetrics<TValue>(Dictionary<string, TValue>? commonMetrics, IReadOnlyDictionary<string, TValue>? other)
-            {
-                var metrics = new Dictionary<string, TValue>(commonMetrics);
-
-                if (other is not null)
-                {
-                    foreach (var item in other)
-                    {
-                        metrics[item.Key] = item.Value;
-                    }
-                }
-
-                return metrics;
-            }
         }
 
         private string PrependProducerNamespace(string eventName) => $"{_options.ProducerNamespace}/{eventName}";
@@ -116,24 +99,21 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             }
         }
 
-        public IDisposable AddHashedProperty(string name, string value)
-            => AddProperty(name, _hasher.Hash(value));
+        public IDisposable AddHashedProperty(string name, Func<string> value)
+            => AddProperty(name, () => _hasher.Hash(value()));
 
-        public IDisposable AddProperty(string name, string value)
+        public IDisposable AddProperty(string name, Func<string> value)
         {
             if (_queue is null)
             {
                 return new DelegateDisposable(static () => { });
             }
 
-            if (_commonProperties is null)
-            {
-                return new DelegateDisposable(static () => { });
-            }
+            var initializer = new CustomPropertyInitializer(name, value);
 
-            _queue.Add(_ => _commonProperties[name] = value);
+            _queue.Add(_ => _telemetryConfig?.TelemetryInitializers.Add(initializer));
 
-            return new DelegateDisposable(() => _queue.Add(_ => _commonProperties.Remove(name)));
+            return new DelegateDisposable(() => _telemetryConfig?.TelemetryInitializers.Remove(initializer));
         }
 
         private sealed class DelegateDisposable : IDisposable
@@ -146,6 +126,26 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             }
 
             public void Dispose() => _action();
+        }
+
+        private class CustomPropertyInitializer : ITelemetryInitializer
+        {
+            private readonly string _name;
+            private readonly Func<string> _value;
+
+            public CustomPropertyInitializer(string name, Func<string> value)
+            {
+                _name = name;
+                _value = value;
+            }
+
+            public void Initialize(ApplicationInsights.Channel.ITelemetry telemetry)
+            {
+                if (telemetry is ISupportProperties properties)
+                {
+                    properties.Properties[_name] = _value();
+                }
+            }
         }
     }
 }

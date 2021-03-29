@@ -4,13 +4,15 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Options;
 
 using RuntimeEnvironment = Microsoft.DotNet.PlatformAbstractions.RuntimeEnvironment;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
-    public class TelemetryCommonProperties
+    public class TelemetryCommonProperties : ITelemetryInitializer
     {
         private const string OSVersion = "OS Version";
         private const string OSPlatform = "OS Platform";
@@ -43,7 +45,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private readonly IStringHasher _hasher;
         private readonly IMacAddressProvider _macAddressProvider;
 
-        public Dictionary<string, string> GetTelemetryCommonProperties()
+        private Dictionary<string, string> GetTelemetryCommonProperties()
             => new()
             {
                 { OSVersion, RuntimeEnvironment.OperatingSystemVersion },
@@ -87,6 +89,26 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         private static string GetKernelVersion()
         {
             return RuntimeInformation.OSDescription;
+        }
+
+        private Dictionary<string, string>? _properties;
+
+        public void Initialize(ApplicationInsights.Channel.ITelemetry telemetry)
+        {
+            if (telemetry is not ISupportProperties t)
+            {
+                return;
+            }
+
+            if (_properties is null)
+            {
+                _properties = GetTelemetryCommonProperties();
+            }
+
+            foreach (var p in _properties)
+            {
+                t.Properties[p.Key] = p.Value;
+            }
         }
     }
 }
