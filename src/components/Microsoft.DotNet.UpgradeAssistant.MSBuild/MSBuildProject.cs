@@ -21,13 +21,11 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
         public MSBuildWorkspaceUpgradeContext Context { get; }
 
-        public string FilePath { get; }
+        public FileInfo FileInfo { get; }
 
-        public string Directory => Path.GetDirectoryName(FilePath)!;
-
-        public MSBuildProject(MSBuildWorkspaceUpgradeContext context, IComponentIdentifier componentIdentifier, string path, ILogger logger)
+        public MSBuildProject(MSBuildWorkspaceUpgradeContext context, IComponentIdentifier componentIdentifier, FileInfo file, ILogger logger)
         {
-            FilePath = path;
+            FileInfo = file;
             Context = context;
 
             _componentIdentifier = componentIdentifier;
@@ -45,23 +43,21 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
                 throw new InvalidOperationException("Could not find project path for reference");
             }
 
-            return Context.GetOrAddProject(project.FilePath);
+            return Context.GetOrAddProject(new FileInfo(project.FilePath));
         });
 
-        public Language Language => ParseLanguageByProjectFileExtension(FilePath);
+        public Language Language => ParseLanguageByProjectFileExtension(FileInfo.Extension);
 
-        private static Language ParseLanguageByProjectFileExtension(string filePath)
-        {
-            return Path.GetExtension(filePath).ToUpperInvariant() switch
+        private static Language ParseLanguageByProjectFileExtension(string extension)
+            => extension.ToUpperInvariant() switch
             {
                 ".CSPROJ" => Language.CSharp,
                 ".VBPROJ" => Language.VisualBasic,
                 ".FSPROJ" => Language.FSharp,
                 _ => Language.Unknown
             };
-        }
 
-        public MBuild.Project Project => Context.ProjectCollection.LoadProject(FilePath);
+        public MBuild.Project Project => Context.ProjectCollection.LoadProject(FileInfo.FullName);
 
         public ProjectOutputType OutputType =>
             ProjectRoot.Properties.FirstOrDefault(p => p.Name.Equals(MSBuildConstants.OutputTypePropertyName, StringComparison.OrdinalIgnoreCase))?.Value switch
@@ -94,7 +90,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
             {
                 yield return Path.IsPathFullyQualified(item.EvaluatedInclude)
                     ? item.EvaluatedInclude
-                    : Path.Combine(Path.GetDirectoryName(FilePath) ?? string.Empty, item.EvaluatedInclude);
+                    : Path.Combine(FileInfo.DirectoryName ?? string.Empty, item.EvaluatedInclude);
             }
         }
 
@@ -156,7 +152,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
                     if (lockFile is null)
                     {
-                        throw new ProjectRestoreRequiredException($"Project is not restored: {FilePath}");
+                        throw new ProjectRestoreRequiredException($"Project is not restored: {FileInfo}");
                     }
 
                     var lockFileTarget = lockFile
@@ -165,7 +161,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
                     if (lockFileTarget is null)
                     {
-                        throw new ProjectRestoreRequiredException($"Could not find {tfm.DotNetFrameworkName} in {LockFilePath} for {FilePath}");
+                        throw new ProjectRestoreRequiredException($"Could not find {tfm.DotNetFrameworkName} in {LockFilePath} for {FileInfo}");
                     }
 
                     return lockFileTarget.Libraries.Select(l => new NuGetReference(l.Name, l.Version.ToNormalizedString()));
@@ -186,7 +182,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
                 if (!Path.IsPathFullyQualified(lockFilePath))
                 {
-                    lockFilePath = Path.Combine(Directory, lockFilePath);
+                    lockFilePath = Path.Combine(FileInfo.DirectoryName ?? string.Empty, lockFilePath);
                 }
 
                 return lockFilePath;
@@ -221,8 +217,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
                     if (propCount != 1)
                     {
-                        _logger.LogError("Expected project to have exactly one {PropertyName} property. Found {TargetFrameworkCount} TargetFramework properties for project {Project}.", propertyName, propCount, FilePath);
-                        throw new UpgradeException($"Expected project to have exactly one {propertyName} property. Found {propCount} TargetFramework properties for project {FilePath}.");
+                        _logger.LogError("Expected project to have exactly one {PropertyName} property. Found {TargetFrameworkCount} TargetFramework properties for project {Project}.", propertyName, propCount, FileInfo);
+                        throw new UpgradeException($"Expected project to have exactly one {propertyName} property. Found {propCount} TargetFramework properties for project {FileInfo}.");
                     }
 
                     return targetFrameworkProperties.Single().Value;
@@ -238,15 +234,15 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
         {
             if (obj is MSBuildProject other)
             {
-                return string.Equals(FilePath, other.FilePath, StringComparison.OrdinalIgnoreCase);
+                return string.Equals(FileInfo.FullName, other.FileInfo.FullName, StringComparison.OrdinalIgnoreCase);
             }
 
             return false;
         }
 
-        public override int GetHashCode() => StringComparer.OrdinalIgnoreCase.GetHashCode(FilePath);
+        public override int GetHashCode() => StringComparer.OrdinalIgnoreCase.GetHashCode(FileInfo);
 
         public Project GetRoslynProject()
-            => Context.Workspace.CurrentSolution.Projects.First(p => string.Equals(p.FilePath, FilePath, StringComparison.OrdinalIgnoreCase));
+            => Context.Workspace.CurrentSolution.Projects.First(p => string.Equals(p.FilePath, FileInfo.FullName, StringComparison.OrdinalIgnoreCase));
     }
 }
