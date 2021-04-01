@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 
 namespace Microsoft.DotNet.UpgradeAssistant
@@ -37,7 +38,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
                     {
                         { "Project Id", project.Id },
                         { "Output Type", project.OutputType.ToString() },
-                        { "Target Frameworks", project.TFM.Name },
+                        { "Target Frameworks", string.Join(";", project.TargetFrameworks.Select(t => t.Name)) },
                         { "Components", project.Components.ToString() },
                         { "Project Types", string.Join(";", project.ProjectTypes) },
                     };
