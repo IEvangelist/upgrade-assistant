@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using Microsoft.DotNet.UpgradeAssistant.Checks;
-using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.DotNet.UpgradeAssistant
@@ -15,8 +14,6 @@ namespace Microsoft.DotNet.UpgradeAssistant
             services.AddTransient<IUpgradeStepOrderer, UpgradeStepOrderer>();
             services.AddTransient<ITargetTFMSelector, TargetTFMSelector>();
             services.AddReadinessChecks();
-
-            services.AddSingleton<IStringHasher, KnownStepsHasher>();
         }
 
         public static void AddReadinessChecks(this IServiceCollection services)
