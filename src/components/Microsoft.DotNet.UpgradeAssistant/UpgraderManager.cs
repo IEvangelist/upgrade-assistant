@@ -32,7 +32,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
 
         public IEnumerable<UpgradeStep> AllSteps => _orderer.UpgradeSteps;
 
-        public Task<IEnumerable<UpgradeStep>> InitializeAsync(IUpgradeContext context, CancellationToken token)
+        public async Task<IEnumerable<UpgradeStep>> InitializeAsync(IUpgradeContext context, CancellationToken token)
         {
             if (context is null)
             {
@@ -40,9 +40,9 @@ namespace Microsoft.DotNet.UpgradeAssistant
             }
 
             _telemetry.TrackEvent("initialize", measurements: new Dictionary<string, double> { { "Project Count", context.Projects.Count() } });
-            _telemetry.TrackProjectProperties(context);
+            await _telemetry.TrackProjectPropertiesAsync(context, token).ConfigureAwait(false);
 
-            return Task.FromResult(AllSteps);
+            return AllSteps;
         }
 
         /// <summary>

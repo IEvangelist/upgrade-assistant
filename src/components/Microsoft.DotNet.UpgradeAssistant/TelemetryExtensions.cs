@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 
 namespace Microsoft.DotNet.UpgradeAssistant
@@ -13,7 +15,7 @@ namespace Microsoft.DotNet.UpgradeAssistant
         public static IDisposable TimeStep(this ITelemetry telemetry, string eventName, UpgradeStep step)
             => telemetry.TimeEvent($"step/{eventName}", onComplete: (p, _) => p.Add("Step Status", step.Status.ToString()));
 
-        public static void TrackProjectProperties(this ITelemetry telemetry, IUpgradeContext context)
+        public static async Task TrackProjectPropertiesAsync(this ITelemetry telemetry, IUpgradeContext context, CancellationToken token)
         {
             if (telemetry is null)
             {
@@ -34,12 +36,13 @@ namespace Microsoft.DotNet.UpgradeAssistant
             {
                 try
                 {
+                    var components = await project.GetComponentsAsync(token).ConfigureAwait(false);
                     var properties = new Dictionary<string, string>
                     {
                         { "Project Id", project.Id },
                         { "Output Type", project.OutputType.ToString() },
                         { "Target Frameworks", string.Join(";", project.TargetFrameworks.Select(t => t.Name)) },
-                        { "Components", project.Components.ToString() },
+                        { "Components", components.ToString() },
                         { "Project Types", string.Join(";", project.ProjectTypes) },
                     };
 

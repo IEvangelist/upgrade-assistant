@@ -62,7 +62,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
 
                     while (step is not null)
                     {
-
                         await ShowUpgradeStepsAsync(steps, context, token, step);
 
                         using (_telemetry.AddProperty("Step Id", () => step.Id))
