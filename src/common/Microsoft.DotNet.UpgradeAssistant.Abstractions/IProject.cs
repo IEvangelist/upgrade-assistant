@@ -3,6 +3,8 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 
 namespace Microsoft.DotNet.UpgradeAssistant
@@ -19,23 +21,17 @@ namespace Microsoft.DotNet.UpgradeAssistant
 
         IEnumerable<IProject> ProjectReferences { get; }
 
-        NugetPackageFormat PackageReferenceFormat { get; }
-
         IEnumerable<Reference> FrameworkReferences { get; }
 
-        IEnumerable<NuGetReference> PackageReferences { get; }
+        ValueTask<INuGetReferences> GetNuGetReferencesAsync(CancellationToken token);
 
         IEnumerable<string> ProjectTypes { get; }
-
-        IEnumerable<NuGetReference> GetTransitivePackageReferences(TargetFrameworkMoniker tfm);
-
-        string? LockFilePath { get; }
 
         IEnumerable<Reference> References { get; }
 
         IReadOnlyCollection<TargetFrameworkMoniker> TargetFrameworks { get; }
 
-        ProjectComponents Components { get; }
+        ValueTask<ProjectComponents> GetComponentsAsync(CancellationToken token);
 
         ProjectOutputType OutputType { get; }
 

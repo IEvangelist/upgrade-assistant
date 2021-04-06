@@ -22,6 +22,8 @@ namespace Microsoft.DotNet.UpgradeAssistant
             services.AddTransient<ISolutionInfo, SolutionInfo>();
             services.AddSingleton<IUpgradeContextFactory, MSBuildUpgradeContextFactory>();
             services.AddSingleton<IComponentIdentifier, ComponentIdentifier>();
+            services.AddSingleton<IPackageLoader, PackageLoader>();
+            services.AddSingleton<IVersionComparer, NuGetVersionComparer>();
 
             // Instantiate the upgrade context with a func to avoid needing MSBuild types prior to MSBuild registration
             services.AddTransient<MSBuildWorkspaceUpgradeContext>();
