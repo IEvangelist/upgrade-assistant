@@ -119,6 +119,26 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             }
         }
 
-        public Guid MachineId => Guid.Parse(Properties[MachineIdKey]);
+        public Guid MachineId
+        {
+            get
+            {
+                try
+                {
+                    if (Properties.TryGetValue(MachineIdKey, out var machineId) && machineId.Length >= 32)
+                    {
+                        var chopped = machineId.Substring(0, 32);
+                        return new Guid(chopped);
+                    }
+                }
+#pragma warning disable CA1031 // Do not catch general exception types
+                catch
+#pragma warning restore CA1031 // Do not catch general exception types
+                {
+                }
+
+                return Guid.Empty;
+            }
+        }
     }
 }

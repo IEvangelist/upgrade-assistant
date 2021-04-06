@@ -10,9 +10,10 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
     public class Sha256Hasher : IStringHasher
     {
-        private readonly IPropertyRetriever _properties;
+        // We use a Lazy<> as otherwise there's a circular dependency
+        private readonly Lazy<IPropertyRetriever> _properties;
 
-        public Sha256Hasher(IPropertyRetriever properties)
+        public Sha256Hasher(Lazy<IPropertyRetriever> properties)
         {
             _properties = properties;
         }
@@ -39,7 +40,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             var path = Encoding.Unicode.GetBytes(filePath.ToLowerInvariant());
 #pragma warning restore CA1308 // Normalize strings to uppercase
 
-            var fromMachineId = GetFileSafeGUID(incremental, path, _properties.MachineId);
+            var fromMachineId = GetFileSafeGUID(incremental, path, _properties.Value.MachineId);
             var result = GetFileSafeGUID(incremental, path, fromMachineId);
 
             return result.ToString();
