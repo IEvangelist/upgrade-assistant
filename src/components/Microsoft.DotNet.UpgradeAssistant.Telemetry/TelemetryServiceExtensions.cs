@@ -29,7 +29,9 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IStringHasher, Sha256Hasher>();
             services.AddSingleton<IFirstTimeUseNoticeSentinel, FirstTimeUseNoticeSentinel>();
 
-            services.AddSingleton<ITelemetryInitializer, TelemetryCommonProperties>();
+            services.AddSingleton<TelemetryCommonProperties>();
+            services.AddTransient<ITelemetryInitializer>(ctx => ctx.GetRequiredService<TelemetryCommonProperties>());
+            services.AddTransient<IPropertyRetriever>(ctx => ctx.GetRequiredService<TelemetryCommonProperties>());
         }
     }
 }

@@ -45,6 +45,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
             }
         }
 
+        public string? PermanentSolutionId => SolutionInfo.PermanentSolutionId;
+
         public string? SolutionId => SolutionInfo.SolutionId;
 
         public bool IsComplete { get; set; }

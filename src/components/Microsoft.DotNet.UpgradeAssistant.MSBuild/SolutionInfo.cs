@@ -16,20 +16,24 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
         private readonly Dictionary<string, string> _mappings;
         private readonly IStringHasher _hasher;
 
-        public SolutionInfo(IStringHasher hasher, string slnFile)
+        public SolutionInfo(IStringHasher hasher,  string slnFile)
         {
             _mappings = GetProjectMappings(slnFile);
             _hasher = hasher;
 
             if (TryGetSolutionId(slnFile, out var slnId))
             {
-                SolutionId = slnId;
+                PermanentSolutionId = slnId;
             }
             else
             {
-                SolutionId = _hasher.Hash(slnFile);
+                PermanentSolutionId = _hasher.Hash(slnFile);
             }
+
+            SolutionId = hasher.HashFilePath(slnFile);
         }
+
+        public string PermanentSolutionId { get; }
 
         public string SolutionId { get; }
 

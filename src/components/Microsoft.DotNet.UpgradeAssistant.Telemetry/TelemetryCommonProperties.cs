@@ -12,14 +12,14 @@ using RuntimeEnvironment = Microsoft.DotNet.PlatformAbstractions.RuntimeEnvironm
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
-    public class TelemetryCommonProperties : ITelemetryInitializer
+    public class TelemetryCommonProperties : ITelemetryInitializer, IPropertyRetriever
     {
         private const string OSVersion = "OS Version";
         private const string OSPlatform = "OS Platform";
         private const string RuntimeId = "Runtime Id";
         private const string ProductVersion = "Product Version";
         private const string DockerContainer = "Docker Container";
-        private const string MachineId = "Machine ID";
+        private const string MachineIdKey = "Machine ID";
         private const string KernelVersion = "Kernel Version";
 
         private const string MachineIdCacheKey = "MachineId";
@@ -53,7 +53,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 { RuntimeId, RuntimeEnvironment.GetRuntimeIdentifier() },
                 { ProductVersion, _options.Value.ProductVersion },
                 { DockerContainer, IsDockerContainer() },
-                { MachineId, GetMachineId() },
+                { MachineIdKey, GetMachineId() },
                 { KernelVersion, GetKernelVersion() }
             };
 
@@ -100,15 +100,25 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 return;
             }
 
-            if (_properties is null)
-            {
-                _properties = GetTelemetryCommonProperties();
-            }
-
-            foreach (var p in _properties)
+            foreach (var p in Properties)
             {
                 t.Properties[p.Key] = p.Value;
             }
         }
+
+        private Dictionary<string, string> Properties
+        {
+            get
+            {
+                if (_properties is null)
+                {
+                    _properties = GetTelemetryCommonProperties();
+                }
+
+                return _properties;
+            }
+        }
+
+        public Guid MachineId => Guid.Parse(Properties[MachineIdKey]);
     }
 }

@@ -5,6 +5,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 {
     internal interface ISolutionInfo
     {
+        string PermanentSolutionId { get; }
+
         string SolutionId { get; }
 
         string GetProjectId(string project);

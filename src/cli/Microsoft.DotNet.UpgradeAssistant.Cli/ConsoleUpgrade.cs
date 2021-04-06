@@ -46,6 +46,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
         {
             using var context = await _contextFactory.CreateContext(token);
 
+            using (_telemetry.AddProperty("Permanent Solution Id", () => context.PermanentSolutionId ?? string.Empty))
             using (_telemetry.AddProperty("Solution Id", () => context.SolutionId ?? string.Empty))
             using (_telemetry.AddProperty("Entrypoint Id", () => context.EntryPoint?.Id ?? string.Empty))
             using (_telemetry.AddProperty("Project Id", () => context.CurrentProject?.Id ?? string.Empty))

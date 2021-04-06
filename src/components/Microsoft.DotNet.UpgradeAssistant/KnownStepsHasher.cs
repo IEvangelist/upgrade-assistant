@@ -12,7 +12,8 @@ namespace Microsoft.DotNet.UpgradeAssistant
     {
         private readonly Lazy<HashSet<string>> _knownSteps;
 
-        public KnownStepsHasher(Lazy<IUpgradeStepOrderer> steps)
+        public KnownStepsHasher(Lazy<IUpgradeStepOrderer> steps, IPropertyRetriever properties)
+            : base(properties)
         {
             // Lazily create this so that it will be accessed after MSBuild is registered.
             _knownSteps = new(() =>
