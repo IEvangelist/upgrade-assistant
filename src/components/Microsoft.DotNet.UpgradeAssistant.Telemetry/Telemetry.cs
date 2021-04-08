@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.DotNet.PlatformAbstractions;
@@ -15,9 +14,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     [SuppressMessage("Naming", "CA1724: Type names should not match namespaces", Justification = "Keeping it consistent with source implementations.")]
     internal sealed class Telemetry : ITelemetry
     {
-        private readonly TelemetryConfiguration? _telemetryConfig;
         private readonly TelemetryOptions _options;
-        private readonly TelemetryClient _client;
+        private readonly TelemetryConfiguration? _telemetryConfig;
+        private readonly TelemetryClient? _client;
 
         public Telemetry(
             IOptions<TelemetryOptions> options,
@@ -78,7 +77,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         private string PrependProducerNamespace(string eventName) => $"{_options.ProducerNamespace}/{eventName}";
 
-        public async ValueTask DisposeAsync()
+        public void Dispose()
         {
             _telemetryConfig?.Dispose();
 

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 {
-    public interface ITelemetry : IAsyncDisposable
+    public interface ITelemetry : IDisposable
     {
         bool Enabled { get; }
 
