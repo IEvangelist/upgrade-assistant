@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.DotNet.PlatformAbstractions;
 using Microsoft.Extensions.Options;
@@ -16,15 +15,13 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
     [SuppressMessage("Naming", "CA1724: Type names should not match namespaces", Justification = "Keeping it consistent with source implementations.")]
     internal sealed class Telemetry : ITelemetry
     {
-        private readonly IStringHasher _hasher;
         private readonly TelemetryConfiguration? _telemetryConfig;
-        private readonly SerializedQueue<TelemetryClient>? _queue;
         private readonly TelemetryOptions _options;
+        private readonly TelemetryClient _client;
 
         public Telemetry(
             IOptions<TelemetryOptions> options,
             IEnumerable<ITelemetryInitializer> initializers,
-            IStringHasher hasher,
             IFirstTimeUseNoticeSentinel sentinel)
         {
             if (options is null)
@@ -32,7 +29,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 throw new ArgumentNullException(nameof(options));
             }
 
-            _hasher = hasher ?? throw new ArgumentNullException(nameof(hasher));
             _options = options.Value;
 
             Enabled = !EnvironmentHelper.GetEnvironmentVariableAsBool(_options.TelemetryOptout) && PermissionExists(sentinel);
@@ -49,16 +45,13 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
                 _telemetryConfig.TelemetryInitializers.Add(initializer);
             }
 
-            _queue = new SerializedQueue<TelemetryClient>(() =>
+            _client = new TelemetryClient(_telemetryConfig)
             {
-                var client = new TelemetryClient(_telemetryConfig);
+                InstrumentationKey = _options.InstrumentationKey
+            };
 
-                client.InstrumentationKey = _options.InstrumentationKey;
-                client.Context.Session.Id = _options.CurrentSessionId;
-                client.Context.Device.OperatingSystem = RuntimeEnvironment.OperatingSystem;
-
-                return client;
-            });
+            _client.Context.Session.Id = _options.CurrentSessionId;
+            _client.Context.Device.OperatingSystem = RuntimeEnvironment.OperatingSystem;
         }
 
         public bool Enabled { get; }
@@ -75,16 +68,12 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
 
         public void TrackEvent(string eventName, IDictionary<string, string>? properties, IDictionary<string, double>? measurements)
         {
-            if (!Enabled || _queue is null)
+            if (!Enabled || _client is null)
             {
                 return;
             }
 
-            _queue.Add(client =>
-            {
-                client.TrackEvent(PrependProducerNamespace(eventName), properties, measurements);
-                client.Flush();
-            });
+            _client.TrackEvent(PrependProducerNamespace(eventName), properties, measurements);
         }
 
         private string PrependProducerNamespace(string eventName) => $"{_options.ProducerNamespace}/{eventName}";
@@ -93,58 +82,9 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         {
             _telemetryConfig?.Dispose();
 
-            if (_queue is not null)
+            if (_client is not null)
             {
-                await _queue.DisposeAsync().ConfigureAwait(false);
-            }
-        }
-
-        public IDisposable AddHashedProperty(string name, Func<string> value)
-            => AddProperty(name, () => _hasher.Hash(value()));
-
-        public IDisposable AddProperty(string name, Func<string> value)
-        {
-            if (_queue is null)
-            {
-                return new DelegateDisposable(static () => { });
-            }
-
-            var initializer = new CustomPropertyInitializer(name, value);
-
-            _queue.Add(_ => _telemetryConfig?.TelemetryInitializers.Add(initializer));
-
-            return new DelegateDisposable(() => _telemetryConfig?.TelemetryInitializers.Remove(initializer));
-        }
-
-        private sealed class DelegateDisposable : IDisposable
-        {
-            private readonly Action _action;
-
-            public DelegateDisposable(Action action)
-            {
-                _action = action;
-            }
-
-            public void Dispose() => _action();
-        }
-
-        private class CustomPropertyInitializer : ITelemetryInitializer
-        {
-            private readonly string _name;
-            private readonly Func<string> _value;
-
-            public CustomPropertyInitializer(string name, Func<string> value)
-            {
-                _name = name;
-                _value = value;
-            }
-
-            public void Initialize(ApplicationInsights.Channel.ITelemetry telemetry)
-            {
-                if (telemetry is ISupportProperties properties)
-                {
-                    properties.Properties[_name] = _value();
-                }
+                _client.Flush();
             }
         }
     }

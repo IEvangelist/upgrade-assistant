@@ -51,6 +51,8 @@ namespace Microsoft.DotNet.UpgradeAssistant.MSBuild
 
         public bool IsComplete { get; set; }
 
+        public UpgradeStep? CurrentStep { get; set; }
+
         public MSBuildWorkspaceUpgradeContext(
             UpgradeOptions options,
             IVisualStudioFinder vsFinder,

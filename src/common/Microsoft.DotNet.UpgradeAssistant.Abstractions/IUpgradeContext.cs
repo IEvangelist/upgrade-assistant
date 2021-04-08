@@ -19,6 +19,8 @@ namespace Microsoft.DotNet.UpgradeAssistant
 
         bool IsComplete { get; set; }
 
+        UpgradeStep? CurrentStep { get; set; }
+
         IProject? EntryPoint { get; }
 
         void SetEntryPoint(IProject? entryPoint);

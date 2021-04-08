@@ -14,6 +14,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
     public class ConsoleUpgrade : IAppCommand
     {
         private readonly IUserInput _input;
+        private readonly IUpgradeContextAccessor _context;
         private readonly InputOutputStreams _io;
         private readonly IUpgradeContextFactory _contextFactory;
         private readonly CommandProvider _commandProvider;
@@ -24,6 +25,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
 
         public ConsoleUpgrade(
             IUserInput input,
+            IUpgradeContextAccessor context,
             InputOutputStreams io,
             IUpgradeContextFactory contextFactory,
             CommandProvider commandProvider,
@@ -33,6 +35,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             ILogger<ConsoleUpgrade> logger)
         {
             _input = input ?? throw new ArgumentNullException(nameof(input));
+            _context = context;
             _io = io ?? throw new ArgumentNullException(nameof(io));
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _commandProvider = commandProvider ?? throw new ArgumentNullException(nameof(commandProvider));
@@ -46,40 +49,33 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
         {
             using var context = await _contextFactory.CreateContext(token);
 
-            using (_telemetry.AddProperty("Permanent Solution Id", () => context.PermanentSolutionId ?? string.Empty))
-            using (_telemetry.AddProperty("Solution Id", () => context.SolutionId ?? string.Empty))
-            using (_telemetry.AddProperty("Entrypoint Id", () => context.EntryPoint?.Id ?? string.Empty))
-            using (_telemetry.AddProperty("Project Id", () => context.CurrentProject?.Id ?? string.Empty))
+            _context.Current = context;
+
+            await _stateManager.LoadStateAsync(context, token);
+
+            try
             {
-                await _stateManager.LoadStateAsync(context, token);
+                // Cache current steps here as defense-in-depth against the possibility
+                // of a bug (or very weird upgrade step behavior) causing the current step
+                // to reset state after being initialized by GetNextStepAsync
+                var steps = await _upgrader.InitializeAsync(context, token);
+                var step = await _upgrader.GetNextStepAsync(context, token);
 
-                try
+                while (step is not null)
                 {
-                    // Cache current steps here as defense-in-depth against the possibility
-                    // of a bug (or very weird upgrade step behavior) causing the current step
-                    // to reset state after being initialized by GetNextStepAsync
-                    var steps = await _upgrader.InitializeAsync(context, token);
-                    var step = await _upgrader.GetNextStepAsync(context, token);
+                    await ShowUpgradeStepsAsync(steps, context, token, step);
 
-                    while (step is not null)
-                    {
-                        await ShowUpgradeStepsAsync(steps, context, token, step);
+                    await RunStepAsync(context, step, token);
 
-                        using (_telemetry.AddProperty("Step Id", () => step.Id))
-                        {
-                            await RunStepAsync(context, step, token);
-                        }
-
-                        step = await _upgrader.GetNextStepAsync(context, token);
-                    }
-
-                    _logger.LogInformation("Upgrade has completed. Please review any changes.");
+                    step = await _upgrader.GetNextStepAsync(context, token);
                 }
-                finally
-                {
-                    // Do not pass the same token as it may have been canceled and we still need to persist this.
-                    await _stateManager.SaveStateAsync(context, default);
-                }
+
+                _logger.LogInformation("Upgrade has completed. Please review any changes.");
+            }
+            finally
+            {
+                // Do not pass the same token as it may have been canceled and we still need to persist this.
+                await _stateManager.SaveStateAsync(context, default);
             }
         }
 
