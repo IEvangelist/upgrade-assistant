@@ -11,5 +11,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
         bool Enabled { get; }
 
         void TrackEvent(string eventName, IDictionary<string, string>? properties = null, IDictionary<string, double>? measurements = null);
+
+        void TrackException(Exception exception, IDictionary<string, string>? properties = null, IDictionary<string, double>? measurements = null);
     }
 }

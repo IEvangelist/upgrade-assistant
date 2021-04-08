@@ -65,6 +65,16 @@ namespace Microsoft.DotNet.UpgradeAssistant.Telemetry
             return sentinel.Exists();
         }
 
+        public void TrackException(Exception exception, IDictionary<string, string>? properties, IDictionary<string, double>? measurements)
+        {
+            if (!Enabled || _client is null)
+            {
+                return;
+            }
+
+            _client.TrackException(exception, properties, measurements);
+        }
+
         public void TrackEvent(string eventName, IDictionary<string, string>? properties, IDictionary<string, double>? measurements)
         {
             if (!Enabled || _client is null)

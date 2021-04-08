@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.DotNet.UpgradeAssistant.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -54,7 +55,6 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             {
                 _logger.LogError("{Message}", e.Message);
                 _errorCode.ErrorCode = ErrorCodes.UpgradeError;
-
                 _telemetry.TrackEvent("failure/upgrade", new Dictionary<string, string> { { "StackTrace", e.StackTrace ?? string.Empty } });
             }
             catch (OperationCanceledException)
@@ -66,8 +66,7 @@ namespace Microsoft.DotNet.UpgradeAssistant.Cli
             {
                 _logger.LogError(e, "Unexpected error");
                 _errorCode.ErrorCode = ErrorCodes.UnexpectedError;
-
-                _telemetry.TrackEvent("failure/unknown", new Dictionary<string, string> { { "StackTrace", e.StackTrace ?? string.Empty } });
+                _telemetry.TrackException(e);
             }
             finally
             {
